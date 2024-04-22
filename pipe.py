@@ -11,7 +11,13 @@ class Notification:
 
 
 class Subscriber:
-    def __init__(self, flag: str, handler: Callable[[Notification], None]):
+    def __init__(
+            self,
+            flag: str = "",
+            handler: Callable[[Notification], None] = lambda _: None,
+            receive_all: bool = False
+    ):
+        self.receive_all = receive_all
         self.flag = flag
         self.notify = handler
 
@@ -26,7 +32,7 @@ class Pipe:
         while True:
             notification: Notification = self.msgQueue.get()
             self.logger(notification)
-            for subscriber in [s for s in self.subscribers if s.flag == notification.flag]:
+            for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
                 subscriber.notify(notification)
 
     def notify(self, notification: Notification) -> None:
@@ -40,3 +46,6 @@ class Pipe:
             return False
         self.subscribers.append(subscriber)
         return True
+
+    def on(self, flag: str, handler: Callable[[Notification], None]) -> None:
+        self.subscribers.append(Subscriber(flag, handler))

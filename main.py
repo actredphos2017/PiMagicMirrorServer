@@ -2,11 +2,13 @@ import threading
 
 from modules.facial_recognition.main import main as facial_recognition
 from modules.voice_assistant.main import main as voice_assistant
+from modules.messanger.main import main as messanger
 from pipe import Pipe, Notification
 
 registered_modules = [
     voice_assistant,
-    facial_recognition
+    facial_recognition,
+    messanger
 ]
 
 
