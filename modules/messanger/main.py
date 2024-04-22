@@ -1,23 +1,25 @@
+from typing import Callable
+
 from modules.messanger.websocket_server import run_websocket_server
-from pipe import Pipe
+from pipe import Pipe, Notification
 
 notifyPipe: Pipe
-
-moduleFlag = "MESSANGER"
+log: Callable[[str], None]
 
 
 def on_connected():
-    notifyPipe.send(moduleFlag, f"Websocket Connection Established!")
+    log(f"Websocket 已连接！")
 
 
 def receive_handler(msg: any):
-    notifyPipe.send(moduleFlag, f"Receive: {msg}")
+    log(f"Websocket 收到消息: {msg}")
 
 
 def main(pipe: Pipe):
-    global notifyPipe
+    global notifyPipe, log
     notifyPipe = pipe
-    notifyPipe.send(moduleFlag, 'MESSANGER START!')
+    log = Notification.create_notifier(pipe, "MESSANGER")
+    log('信使模块启动！')
     run_websocket_server(
         host="localhost",
         port=8083,

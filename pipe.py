@@ -3,8 +3,10 @@ from queue import Queue
 from typing import Callable
 
 
-class Notification:
-    def __init__(self, flag: str, msg: any):
+class Event:
+    def __init__(self, flag: str, msg=None):
+        if msg is None:
+            msg = {}
         self.flag = flag
         self.msg = msg
         self.stamp = datetime.now()
@@ -14,7 +16,7 @@ class Subscriber:
     def __init__(
             self,
             flag: str = "",
-            handler: Callable[[Notification], None] = lambda _: None,
+            handler: Callable[[Event], None] = lambda _: None,
             receive_all: bool = False
     ):
         self.receive_all = receive_all
@@ -23,23 +25,21 @@ class Subscriber:
 
 
 class Pipe:
-    def __init__(self, logger: Callable[[Notification], None], maxsize=1000):
+    def __init__(self, maxsize=1000):
         self.msgQueue = Queue(maxsize=maxsize)
         self.subscribers: list[Subscriber] = []
-        self.logger = logger
 
     def hold(self) -> None:
         while True:
-            notification: Notification = self.msgQueue.get()
-            self.logger(notification)
+            notification: Event = self.msgQueue.get()
             for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
                 subscriber.notify(notification)
 
-    def notify(self, notification: Notification) -> None:
+    def notify(self, notification: Event) -> None:
         self.msgQueue.put(notification)
 
     def send(self, flag: str, msg: any) -> None:
-        self.notify(Notification(flag, msg))
+        self.notify(Event(flag, msg))
 
     def subscribe(self, subscriber: Subscriber) -> bool:
         if subscriber in self.subscribers:
@@ -47,5 +47,22 @@ class Pipe:
         self.subscribers.append(subscriber)
         return True
 
-    def on(self, flag: str, handler: Callable[[Notification], None]) -> None:
+    def on(self, flag: str, handler: Callable[[Event], None]) -> None:
         self.subscribers.append(Subscriber(flag, handler))
+
+
+class Notification:
+    def __init__(self, sender: str, msg: str):
+        self.flag = sender
+        self.msg = msg
+        self.stamp = datetime.now()
+
+    @staticmethod
+    def create_notifier(pipe: Pipe, sender: str) -> Callable[[str], None]:
+        def notify(msg: str) -> None:
+            pipe.notify(Event("LOG", {
+                "sender": sender,
+                "msg": msg
+            }))
+
+        return notify

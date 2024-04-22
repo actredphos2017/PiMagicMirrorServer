@@ -1,19 +1,34 @@
 import time
+import random
+from typing import Callable
 
-from pipe import Pipe
+from pipe import Pipe, Notification, Event
 
-notifyPipe = None
+notifyPipe: Pipe
+log: Callable[[str], None]
+
+
+def init_module(pipe: Pipe):
+    # 模块初始化
+    global notifyPipe, log
+    notifyPipe = pipe
+    log = Notification.create_notifier(pipe, "FACIAL")
 
 
 def main(pipe: Pipe):
-    global notifyPipe
-    notifyPipe = pipe
+    init_module(pipe)
+    log('人脸识别模块启动！')
 
-    notifyPipe.send('FACIAL', 'FACIAL RECOGNITION START!')
-
-    # Code Here
+    # 主代码
     while True:
+
+        time.sleep(3)
+        faceid = str(random.randint(0, 99))
+        log("模拟人脸进入，人脸 ID: {}".format(faceid))
+        notifyPipe.notify(Event("FACE_ENTER", {
+            "faceid": faceid,
+        }))
+
         time.sleep(5)
-        notifyPipe.send('FACIAL', 'Hello World')
-
-
+        log("模拟人脸离开")
+        notifyPipe.notify(Event("FACE_LEAVE"))

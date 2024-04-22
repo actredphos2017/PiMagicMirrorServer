@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 websockets = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 
