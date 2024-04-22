@@ -2,14 +2,16 @@ import time
 
 from pipe import Pipe
 
-notifyPipe = None
+notifyPipe: Pipe | None = None
 
 
-def main(p: Pipe):
-    print('VOICE ASSISTANT START!')
+def main(pipe: Pipe):
     global notifyPipe
-    notifyPipe = p
+    notifyPipe = pipe
 
+    notifyPipe.send('ASSISTANT', 'VOICE ASSISTANT START!')
+
+    # Code Here
     while True:
         time.sleep(3)
         notifyPipe.send('ASSISTANT', 'Hello World')

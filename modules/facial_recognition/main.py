@@ -5,11 +5,13 @@ from pipe import Pipe
 notifyPipe = None
 
 
-def main(p: Pipe):
-    print('FACIAL RECOGNITION START!')
+def main(pipe: Pipe):
     global notifyPipe
-    notifyPipe = p
+    notifyPipe = pipe
 
+    notifyPipe.send('FACIAL', 'FACIAL RECOGNITION START!')
+
+    # Code Here
     while True:
         time.sleep(5)
         notifyPipe.send('FACIAL', 'Hello World')
