@@ -4,7 +4,7 @@ from modules.facial_recognition.main import main as facial_recognition
 from modules.master.main import main as manager
 from modules.messanger.main import main as messanger
 from modules.voice_assistant.main import main as voice_assistant
-from pipe import Pipe, Event, Subscriber
+from pipe import Pipe, Event
 
 registered_modules = [
     voice_assistant,
@@ -14,7 +14,7 @@ registered_modules = [
 ]
 
 
-def logger(n: Event):
+def logger(n: Event, _):
     print(
         n.stamp.strftime("%Y-%m-%d %H:%M:%S"),
         n.data['sender'],

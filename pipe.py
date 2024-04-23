@@ -16,7 +16,7 @@ class Subscriber:
     def __init__(
             self,
             flag: str = "",
-            handler: Callable[[Event], None] = lambda _: None,
+            handler: Callable[[Event, any], None] = lambda _: None,
             receive_all: bool = False
     ):
         self.receive_all = receive_all
@@ -33,7 +33,7 @@ class Pipe:
         while True:
             notification: Event = self.msgQueue.get()
             for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
-                subscriber.notify(notification)
+                subscriber.notify(notification, self)
 
     def send(self, flag: str, msg: dict | None = None) -> None:
         self.msgQueue.put(Event(flag, msg))
@@ -44,7 +44,7 @@ class Pipe:
         self.subscribers.append(subscriber)
         return True
 
-    def on(self, flag: str, handler: Callable[[Event], None]) -> None:
+    def on(self, flag: str, handler: Callable[[Event, any], None]) -> None:
         self.subscribers.append(Subscriber(flag, handler))
 
 

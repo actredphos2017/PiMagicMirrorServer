@@ -30,12 +30,12 @@ def handle_receive(msg: str, _):
     try:
         event = json.loads(msg)
         log("Websocket 收到事件:", event['event'])
-        notifyPipe.send("RECEIVE_EXTERNAL", event)
+        notifyPipe.send("EXTERNAL_RECEIVE", event)
     except:
         log("Websocket 收到异常消息:", msg)
 
 
-def handle_send(event: Event):
+def handle_send(event: Event, _):
     try:
         log("Websocket 发送事件:", event.data['event'])
         asyncio.run(websocket_server.broadcast(json.dumps(event.data)))
@@ -49,7 +49,7 @@ def main(pipe: Pipe):
     init_module(pipe)
     log('启动！')
 
-    notifyPipe.on("SEND_EXTERNAL", handle_send)
+    notifyPipe.on("EXTERNAL_SEND", handle_send)
 
     websocket_server.run_websocket_server(
         host="localhost",

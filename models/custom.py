@@ -2,21 +2,21 @@ import json
 
 
 class Compose:
-    def __init__(self, compose_id: str, meta=None):
-        if meta is None:
-            meta = {}
+    def __init__(self, compose_id: str, params=None):
+        if params is None:
+            params = {}
         self.compose_id = compose_id
-        self.meta = meta
+        self.params = params
 
     def __dict__(self):
         return {
             "id": self.compose_id,
-            "meta": self.meta
+            "params": self.params
         }
 
     @staticmethod
     def from_dict(compose: dict):
-        return Compose(compose_id=compose["id"], meta=compose["meta"])
+        return Compose(compose_id=compose["id"], params=compose["params"])
 
 
 class CustomComposeStructure:
@@ -72,3 +72,7 @@ class CustomSetting:
         return CustomSetting(
             compose_structure=CustomComposeStructure.default()
         )
+
+
+if __name__ == '__main__':
+    print(json.dumps(CustomSetting.default().__dict__()))
