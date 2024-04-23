@@ -1,8 +1,7 @@
 import threading
 
-from orm import load as load_database
 from modules.facial_recognition.main import main as facial_recognition
-from modules.manager.main import main as manager
+from modules.master.main import main as manager
 from modules.messanger.main import main as messanger
 from modules.voice_assistant.main import main as voice_assistant
 from pipe import Pipe, Event, Subscriber
@@ -16,11 +15,10 @@ registered_modules = [
 
 
 def logger(n: Event):
-    print(n.stamp.strftime("%Y-%m-%d %H:%M:%S"), n.msg['sender'], n.msg['msg'])
+    print(n.stamp.strftime("%Y-%m-%d %H:%M:%S"), n.data['sender'], n.data['msg'])
 
 
 if __name__ == '__main__':
-    load_database()
     pipe = Pipe()
     pipe.subscribe(Subscriber("LOG", logger))
     for module in registered_modules:

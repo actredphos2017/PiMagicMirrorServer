@@ -4,11 +4,11 @@ from typing import Callable
 
 
 class Event:
-    def __init__(self, flag: str, msg=None):
-        if msg is None:
-            msg = {}
+    def __init__(self, flag: str, msg_data: dict | None = None):
+        if msg_data is None:
+            msg_data = {}
         self.flag = flag
-        self.msg = msg
+        self.data = msg_data
         self.stamp = datetime.now()
 
 
