@@ -23,7 +23,7 @@ def external_event(event: str, data: dict | None = None):
 def init_module(pipe: Pipe):
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "MESSANGER")
+    log = Notification.create_notifier(pipe, "连接信使")
 
 
 def handle_receive(msg: str, _):
@@ -44,7 +44,7 @@ def handle_send(event: Event):
 
 def main(pipe: Pipe):
     init_module(pipe)
-    log('信使模块启动！')
+    log('启动！')
 
     notifyPipe.on("SEND_EXTERNAL", handle_send)
 

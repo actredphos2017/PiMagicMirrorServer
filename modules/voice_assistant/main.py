@@ -11,12 +11,12 @@ def init_module(pipe: Pipe):
     # 模块初始化
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "ASSISTANT")
+    log = Notification.create_notifier(pipe, "语音助手")
 
 
 def main(pipe: Pipe):
     init_module(pipe)
-    log('语音助手模块启动！')
+    log('启动！')
 
     # 主代码从这里开始
     while True:

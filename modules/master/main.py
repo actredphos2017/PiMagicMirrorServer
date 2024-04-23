@@ -12,7 +12,7 @@ log: Callable[[str], None]
 def init_module(pipe: Pipe):
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "MANAGER")
+    log = Notification.create_notifier(pipe, "管理员")
 
 
 def handle_user_enter(event: Event):
@@ -39,4 +39,4 @@ def main(pipe: Pipe):
     notifyPipe.on("FACE_ENTER", handle_user_enter)
     notifyPipe.on("FACE_LEAVE", lambda _: notifyPipe.send("SEND_EXTERNAL", external_event("SLEEP")))
 
-    log('管理员模块启动！')
+    log('启动！')

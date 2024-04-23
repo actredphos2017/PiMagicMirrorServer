@@ -15,7 +15,7 @@ registered_modules = [
 
 
 def logger(n: Event):
-    print(n.stamp.strftime("%Y-%m-%d %H:%M:%S"), n.data['sender'], n.data['msg'])
+    print(n.stamp.strftime("%Y-%m-%d %H:%M:%S"), n.data['sender'], n.data['msg'], sep='\t')
 
 
 if __name__ == '__main__':
