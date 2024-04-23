@@ -21,7 +21,3 @@ class UserInfo(Base):
 
 Base.metadata.create_all(engine, checkfirst=True)
 Session = sessionmaker(bind=engine)
-
-
-def load():
-    pass
