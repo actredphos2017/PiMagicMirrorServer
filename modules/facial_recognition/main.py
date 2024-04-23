@@ -1,5 +1,5 @@
-import time
 import random
+import time
 from typing import Callable
 
 from pipe import Pipe, Notification, Event
@@ -19,16 +19,13 @@ def main(pipe: Pipe):
     init_module(pipe)
     log('人脸识别模块启动！')
 
-    # 主代码
+    # 主代码从这里开始
     while True:
-
         time.sleep(3)
         faceid = str(random.randint(0, 99))
         log("模拟人脸进入，人脸 ID: {}".format(faceid))
-        notifyPipe.notify(Event("FACE_ENTER", {
-            "faceid": faceid,
-        }))
+        notifyPipe.send("FACE_ENTER", {"faceid": faceid})
 
         time.sleep(5)
         log("模拟人脸离开")
-        notifyPipe.notify(Event("FACE_LEAVE"))
+        notifyPipe.send("FACE_LEAVE")

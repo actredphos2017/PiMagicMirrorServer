@@ -18,7 +18,7 @@ def main(pipe: Pipe):
     init_module(pipe)
     log('语音助手模块启动！')
 
-    # 主代码
+    # 主代码从这里开始
     while True:
         time.sleep(3)
         log('Hello World')

@@ -35,11 +35,8 @@ class Pipe:
             for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
                 subscriber.notify(notification)
 
-    def notify(self, notification: Event) -> None:
-        self.msgQueue.put(notification)
-
-    def send(self, flag: str, msg: any) -> None:
-        self.notify(Event(flag, msg))
+    def send(self, flag: str, msg: dict | None = None) -> None:
+        self.msgQueue.put(Event(flag, msg))
 
     def subscribe(self, subscriber: Subscriber) -> bool:
         if subscriber in self.subscribers:
@@ -60,9 +57,9 @@ class Notification:
     @staticmethod
     def create_notifier(pipe: Pipe, sender: str) -> Callable[[str], None]:
         def notify(msg: str) -> None:
-            pipe.notify(Event("LOG", {
+            pipe.send("LOG", {
                 "sender": sender,
                 "msg": msg
-            }))
+            })
 
         return notify
