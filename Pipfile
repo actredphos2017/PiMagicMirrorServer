@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 websockets = "*"
 sqlalchemy = "*"
+pyaudio = "*"
 
 [dev-packages]
 
