@@ -20,6 +20,8 @@ def main(pipe: Pipe):
     log('启动！')
 
     # 主代码从这里开始
+
+    # 示例
     while True:
         time.sleep(3)
         faceid = str(random.randint(0, 99))

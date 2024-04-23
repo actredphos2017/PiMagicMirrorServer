@@ -4,7 +4,7 @@ from typing import Callable
 
 import websockets
 
-import modules.messanger.websocket_server as websocket_server
+import utils.websocket_server as websocket_server
 from pipe import Pipe, Notification, Event
 
 notifyPipe: Pipe
@@ -37,9 +37,12 @@ def handle_receive(msg: str, _):
 
 def handle_send(event: Event):
     try:
+        log("Websocket 发送事件:", event.data['event'])
         asyncio.run(websocket_server.broadcast(json.dumps(event.data)))
     except websockets.exceptions.ConnectionClosed:
         pass
+    except:
+        log("Websocket 已阻止异常事件发送:", json.dumps(event.data))
 
 
 def main(pipe: Pipe):
@@ -53,6 +56,6 @@ def main(pipe: Pipe):
         port=8083,
         on_connected=lambda: log(f"Websocket 已连接！"),
         on_receive=handle_receive,
-        on_disconnect=lambda: log("连接已关闭"),
+        on_disconnect=lambda: log("Websocket 连接断开！"),
         on_error=lambda e: log(f"发生异常", e)
     )

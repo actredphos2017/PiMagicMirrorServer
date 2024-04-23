@@ -33,10 +33,23 @@ def handle_user_enter(event: Event):
         }))
 
 
+def handle_user_leave(_: Event):
+    notifyPipe.send("SEND_EXTERNAL", external_event("SLEEP"))
+
+
+def transfer_only(event: Event):
+    notifyPipe.send("SEND_EXTERNAL", external_event(event.flag, event.data))
+
+
 def main(pipe: Pipe):
     init_module(pipe)
 
     notifyPipe.on("FACE_ENTER", handle_user_enter)
-    notifyPipe.on("FACE_LEAVE", lambda _: notifyPipe.send("SEND_EXTERNAL", external_event("SLEEP")))
+    notifyPipe.on("FACE_LEAVE", handle_user_leave)
+
+    notifyPipe.on("ASSISTANT_BEGIN", transfer_only)
+    notifyPipe.on("ASSISTANT_ASK", transfer_only)
+    notifyPipe.on("ASSISTANT_ANSWER", transfer_only)
+    notifyPipe.on("ASSISTANT_CLOSE", transfer_only)
 
     log('启动！')
