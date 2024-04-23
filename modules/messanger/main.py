@@ -8,7 +8,7 @@ import modules.messanger.websocket_server as websocket_server
 from pipe import Pipe, Notification, Event
 
 notifyPipe: Pipe
-log: Callable[[str], None]
+log: Callable
 
 
 def external_event(event: str, data: dict | None = None):
@@ -29,10 +29,10 @@ def init_module(pipe: Pipe):
 def handle_receive(msg: str, _):
     try:
         event = json.loads(msg)
-        log("Websocket 收到事件: {}".format(event['event']))
+        log("Websocket 收到事件:", event['event'])
         notifyPipe.send("RECEIVE_EXTERNAL", event)
     except:
-        log(f"Websocket 收到异常消息: {msg}")
+        log("Websocket 收到异常消息:", msg)
 
 
 def handle_send(event: Event):
@@ -54,5 +54,5 @@ def main(pipe: Pipe):
         on_connected=lambda: log(f"Websocket 已连接！"),
         on_receive=handle_receive,
         on_disconnect=lambda: log("连接已关闭"),
-        on_error=lambda e: log(f"发生异常：{e}")
+        on_error=lambda e: log(f"发生异常", e)
     )

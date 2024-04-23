@@ -4,7 +4,7 @@ from typing import Callable
 from pipe import Pipe, Notification
 
 notifyPipe: Pipe
-log: Callable[[str], None]
+log: Callable
 
 
 def init_module(pipe: Pipe):

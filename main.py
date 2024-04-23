@@ -20,7 +20,7 @@ def logger(n: Event):
 
 if __name__ == '__main__':
     pipe = Pipe()
-    pipe.subscribe(Subscriber("LOG", logger))
+    pipe.on("LOG", logger)
     for module in registered_modules:
         threading.Thread(target=lambda: module(pipe)).start()
     pipe.hold()

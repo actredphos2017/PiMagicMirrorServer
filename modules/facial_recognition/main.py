@@ -5,7 +5,7 @@ from typing import Callable
 from pipe import Pipe, Notification, Event
 
 notifyPipe: Pipe
-log: Callable[[str], None]
+log: Callable
 
 
 def init_module(pipe: Pipe):
@@ -23,7 +23,7 @@ def main(pipe: Pipe):
     while True:
         time.sleep(3)
         faceid = str(random.randint(0, 99))
-        log("模拟人脸进入，人脸 ID: {}".format(faceid))
+        log("模拟人脸进入，人脸 ID:", faceid)
         notifyPipe.send("FACE_ENTER", {"faceid": faceid})
 
         time.sleep(5)

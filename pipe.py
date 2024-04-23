@@ -55,11 +55,11 @@ class Notification:
         self.stamp = datetime.now()
 
     @staticmethod
-    def create_notifier(pipe: Pipe, sender: str) -> Callable[[str], None]:
-        def notify(msg: str) -> None:
+    def create_notifier(pipe: Pipe, sender: str) -> Callable:
+        def notify(*msg: any, seq: str = " ") -> None:
             pipe.send("LOG", {
                 "sender": sender,
-                "msg": msg
+                "msg": seq.join(str(m) for m in msg)
             })
 
         return notify
