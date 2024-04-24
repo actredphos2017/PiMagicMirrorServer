@@ -39,8 +39,6 @@ def handle_send(event: Event, _):
     try:
         log("Websocket 发送事件:", event.data['event'])
         asyncio.run(websocket_server.broadcast(json.dumps(event.data)))
-    except websockets.exceptions.ConnectionClosed:
-        pass
     except:
         log("Websocket 已阻止异常事件发送:", json.dumps(event.data))
 

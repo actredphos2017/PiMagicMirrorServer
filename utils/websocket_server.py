@@ -8,7 +8,10 @@ connection_pool: set[websockets.WebSocketServerProtocol] = set()
 
 async def broadcast(msg: str):
     for connection in connection_pool:
-        await connection.send(msg)
+        try:
+            await connection.send(msg)
+        except websockets.exceptions.ConnectionClosed:
+            continue
 
 
 def run_websocket_server(
