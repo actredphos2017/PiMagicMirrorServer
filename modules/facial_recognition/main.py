@@ -2,7 +2,7 @@ import random
 import time
 from typing import Callable
 
-from pipe import Pipe, Notification, Event
+from pipe import Pipe, Notification
 
 notifyPipe: Pipe
 log: Callable
@@ -15,6 +15,23 @@ def init_module(pipe: Pipe):
     log = Notification.create_notifier(pipe, "人脸识别")
 
 
+def demo():
+    time.sleep(1)
+    faceid = str(random.randint(0, 99))
+    # 环境发生变化
+    notifyPipe.send("ENVIRONMENT_ACTIVE")
+    time.sleep(2)
+    # 识别到人脸
+    notifyPipe.send("FACE_ENTER", {"faceid": faceid})
+
+    time.sleep(5)
+    # 人脸离开
+    notifyPipe.send("FACE_LEAVE")
+    time.sleep(10)
+    # 环境安静
+    notifyPipe.send("ENVIRONMENT_SILENT")
+
+
 def main(pipe: Pipe):
     init_module(pipe)
     log('启动！')
@@ -22,12 +39,6 @@ def main(pipe: Pipe):
     # 主代码从这里开始
 
     # 示例
-    while True:
-        time.sleep(3)
-        faceid = str(random.randint(0, 99))
-        log("模拟人脸进入，人脸 ID:", faceid)
-        notifyPipe.send("FACE_ENTER", {"faceid": faceid})
-
-        time.sleep(5)
-        log("模拟人脸离开")
-        notifyPipe.send("FACE_LEAVE")
+    # while True:
+    #     demo()
+    notifyPipe.send("ENVIRONMENT_ACTIVE")

@@ -1,12 +1,13 @@
 import json
 import time
-from urllib import request,parse
-import pyaudio
 import wave
-from tqdm import tqdm
-from datetime import datetime
 from typing import Callable
+from urllib import request, parse
 
+import pyaudio
+from tqdm import tqdm
+
+from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from pipe import Pipe, Notification
 
 notifyPipe: Pipe
@@ -84,6 +85,7 @@ def usage():
 
 
 def demo():
+    notifyPipe.send("ASSISTANT_BEGIN")
     # 实例化一个PyAudio对象
     pa = pyaudio.PyAudio()
     # 打开声卡，设置 采样深度为16位、声道数为1、采样率为16、输入、采样点缓存数量为2048
@@ -113,18 +115,19 @@ def demo():
 
 
 def get_token():
-    API_Key = "gJFwAo9gWTO18qREU6pI0mjw"  # 官网获取的API_Key
-    Secret_Key = "VgxyVodkdTwJ97XNh1AYIif5NORB5xm5"  # 为官网获取的Secret_Key
+    API_Key = BAIDU_SPEECH_API  # 官网获取的API_Key
+    Secret_Key = BAIDU_SPEECH_SECRET  # 为官网获取的Secret_Key
     # 拼接得到Url
-    Url = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=" + API_Key + "&client_secret=" + Secret_Key
+    Url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={API_Key}&client_secret={Secret_Key}"
     try:
         resp = request.urlopen(Url)
         result = json.loads(resp.read().decode('utf-8'))
         # 打印access_token
         print("access_token:", result['access_token'])
         return result['access_token']
-    except request.URLError as err:
-        print('token http response http code : ' + str(err.code))
+    except Exception as err:
+        print('token http response http code : ' + str(err))
+
 
 def recognize():
     token = get_token()
@@ -158,19 +161,26 @@ def recognize():
     res_f = request.urlopen(req)
     result = json.loads(res_f.read().decode('utf-8'))
     print(result)
-    print("识别结果:", result['result'][0])
-    log("模拟开始语音助手")
-    notifyPipe.send("ASSISTANT_BEGIN")
-    log("模拟语音识别过程")
+    try:
+        content = result['result'][0]
+    except KeyError:
+        content = "你说啥？"
+    print("识别结果:", content)
+
     notifyPipe.send("ASSISTANT_ASK", {
-        "content": result['result'][0],
+        "content": content,
         "end": True
     })
 
+
 def output():
+    time.sleep(2)
     token = get_token()
     # 2、将需要合成的文字做2次urlencode编码
     TEXT = "原神，启动"
+    notifyPipe.send("ASSISTANT_ANSWER", {
+        "content": TEXT
+    })
     tex = parse.quote_plus(TEXT)  # 两次urlencode
     # 3、设置文本以及其他参数
     params = {'tok': token,  # 开放平台获取到的开发者access_token
@@ -196,7 +206,10 @@ def output():
         # 合成成功即将数据存入文件
         with open("result.wav", 'wb') as of:
             of.write(result_str)
-
+        time.sleep(3)
+        notifyPipe.send("ASSISTANT_WAITING")
+        time.sleep(5)
+        notifyPipe.send("ASSISTANT_CLOSE")
 
 
 def main(pipe: Pipe):

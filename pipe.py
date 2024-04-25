@@ -56,10 +56,6 @@ class Pipe:
 
 
 class Notification:
-    def __init__(self, sender: str, msg: str):
-        self.flag = sender
-        self.msg = msg
-        self.stamp = datetime.now()
 
     @staticmethod
     def create_notifier(pipe: Pipe, sender: str) -> Callable:

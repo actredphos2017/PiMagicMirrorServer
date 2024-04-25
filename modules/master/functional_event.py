@@ -1,14 +1,15 @@
 import threading
 
+from orm import LocalStorage
 from pipe import Pipe, Notification
-from utils.caiyun_weather import request_for_comprehensive
+from utils.caiyun_weather import get_weather
 
 
 def to_update_weather(_, pipe: Pipe):
     log = Notification.create_notifier(pipe, "天气之子")
 
     def update_weather():
-        updateResponse = request_for_comprehensive()
+        updateResponse = get_weather()
         log("天气获取结果:", updateResponse if isinstance(updateResponse, int) else "SUCCESS")
         pipe.send("WEATHER_UPDATE", {
             "available": isinstance(updateResponse, dict),
@@ -18,5 +19,14 @@ def to_update_weather(_, pipe: Pipe):
     threading.Thread(target=update_weather).start()
 
 
-def init_call_event_handler(pipe: Pipe):
+def check_environment(_, pipe: Pipe):
+    environment = LocalStorage.get("environment")
+    if environment is not None and environment == "active":
+        pipe.send("ENVIRONMENT_ACTIVE")
+    else:
+        pipe.send("ENVIRONMENT_SILENT")
+
+
+def init_functional_event_handler(pipe: Pipe):
     pipe.on("VIEW_UPDATE_WEATHER", to_update_weather)
+    pipe.on("VIEW_CHECK_ENVIRONMENT", check_environment)

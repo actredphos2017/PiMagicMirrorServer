@@ -1,7 +1,7 @@
 from typing import Callable
 
-from modules.master.call_event_handler import init_call_event_handler
-from modules.master.external_event_sender import init_message_transfer_handler
+from modules.master.functional_event import init_functional_event_handler
+from modules.master.transmission_event import init_transmission_event_handler
 from pipe import Pipe, Notification
 
 notifyPipe: Pipe
@@ -16,7 +16,7 @@ def init_module(pipe: Pipe):
 
 def main(pipe: Pipe):
     init_module(pipe)
-    init_message_transfer_handler(pipe)
-    init_call_event_handler(pipe)
+    init_transmission_event_handler(pipe)
+    init_functional_event_handler(pipe)
 
     log('启动！')

@@ -1,7 +1,7 @@
 import json
 
 from modules.messanger.main import external_event
-from orm import Session, UserInfo
+from orm import Session, UserInfo, LocalStorage
 from pipe import Event, Pipe
 
 
@@ -29,14 +29,27 @@ def transfer_only(event: Event, pipe: Pipe):
     pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
 
 
-def init_message_transfer_handler(pipe: Pipe):
+def handle_environment_active(event: Event, pipe: Pipe):
+    LocalStorage.set("environment", "active")
+    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+
+
+def handle_environment_silent(event: Event, pipe: Pipe):
+    LocalStorage.set("environment", "silent")
+    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+
+
+def init_transmission_event_handler(pipe: Pipe):
     # SEND
+    pipe.on("ENVIRONMENT_ACTIVE", handle_environment_active)
+    pipe.on("ENVIRONMENT_SILENT", handle_environment_silent)
     pipe.on("FACE_ENTER", handle_user_enter)
     pipe.on("FACE_LEAVE", transfer_only)
 
     pipe.on("ASSISTANT_BEGIN", transfer_only)
     pipe.on("ASSISTANT_ASK", transfer_only)
     pipe.on("ASSISTANT_ANSWER", transfer_only)
+    pipe.on("ASSISTANT_WAITING", transfer_only)
     pipe.on("ASSISTANT_CLOSE", transfer_only)
 
     pipe.on("WEATHER_UPDATE", transfer_only)
