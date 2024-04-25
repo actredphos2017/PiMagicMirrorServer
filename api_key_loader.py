@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 EYLINK_GPT_API = os.environ['EYLINK_GPT_API']
 

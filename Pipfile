@@ -9,6 +9,7 @@ sqlalchemy = "*"
 pyaudio = "*"
 requests = "*"
 tqdm = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
