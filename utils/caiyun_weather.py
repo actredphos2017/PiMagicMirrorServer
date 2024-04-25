@@ -1,14 +1,10 @@
+import datetime
 import json
 
 import requests
 
+from api_key_loader import CAIYUN_API_TOKEN, CURRENT_LONGITUDE, CURRENT_LATITUDE
 from orm import LocalStorage
-
-import datetime
-
-current_longitude = "120.35"
-current_latitude = "30.31"
-caiyun_api_token = "mkhvpq9w0AsN6gjl"
 
 
 def get_comprehensive_url(token: str, longitude, latitude):
@@ -25,7 +21,7 @@ def get_weather() -> dict | int:
         if old_data['server_time'] + 900 > datetime.datetime.now().timestamp():
             return old_data
 
-    response = requests.get(get_comprehensive_url(caiyun_api_token, current_longitude, current_latitude))
+    response = requests.get(get_comprehensive_url(CAIYUN_API_TOKEN, CURRENT_LONGITUDE, CURRENT_LATITUDE))
     match response.status_code:
         case 200:
             respData = response.text
@@ -33,4 +29,3 @@ def get_weather() -> dict | int:
             return dict(json.loads(respData))
         case _:
             return response.status_code
-
