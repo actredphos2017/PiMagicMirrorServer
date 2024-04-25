@@ -46,12 +46,12 @@ def usage():
     })
 
 
-def record():
+def record(stream):
     notifyPipe.send("ASSISTANT_BEGIN")
     # 实例化一个PyAudio对象
-    pa = pyaudio.PyAudio()
+    #pa = pyaudio.PyAudio()
     # 打开声卡，设置 采样深度为16位、声道数为1、采样率为16、输入、采样点缓存数量为2048
-    stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=2048)
+    #stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=2048)
     # 新建一个列表，用来存储采样到的数据
     record_buf = []
     count = 0
@@ -59,7 +59,7 @@ def record():
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
-        print('*')
+        log('*')
     wf = wave.open('01.wav', 'wb')  # 创建一个音频文件，名字为“01.wav"
     wf.setnchannels(1)  # 设置声道数为2
     wf.setsampwidth(2)  # 设置采样深度为
@@ -69,11 +69,11 @@ def record():
     # 写完后将文件关闭
     wf.close()
     # 停止声卡
-    stream.stop_stream()
+    #stream.stop_stream()
     # 关闭声卡
-    stream.close()
+    #stream.close()
     # 终止pyaudio
-    pa.terminate()
+    #pa.terminate()
 
 
 def get_token():
@@ -91,7 +91,7 @@ def get_token():
         print('token http response http code : ' + str(err))
 
 
-def recognize():
+def recognize() -> bool:
     token = get_token()
     # 2、打开需要识别的语音文件
     speech_data = []
@@ -125,25 +125,28 @@ def recognize():
     print(result)
     try:
         content = result['result'][0]
-    except KeyError:
-        content = "你说啥？"
-    print("识别结果:", content)
+        log("识别结果:", content)
 
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": content,
-        "end": True
-    })
-    answer = chat(content)
-    notifyPipe.send("ASSISTANT_ANSWER", {
-        "content": answer
-    })
-    # output(answer)
+        notifyPipe.send("ASSISTANT_ASK", {
+            "content": content,
+            "end": True
+        })
+        answer = chat(content)
+        log(answer)
+        return output(answer)
+    except:
+        return output()
+    
 
 
-def output(TEXT: str):
+def output(TEXT: str | None = None) -> bool:
+    if TEXT is None:
+        notifyPipe.send("ASSISTANT_ANSWER", {
+            "content": "Sorry.I don't get you."
+        })
+        return False
     token = get_token()
     # 2、将需要合成的文字做2次urlencode编码
-    
     tex = parse.quote_plus(TEXT)  # 两次urlencode
     # 3、设置文本以及其他参数
     params = {'tok': token,  # 开放平台获取到的开发者access_token
@@ -169,26 +172,51 @@ def output(TEXT: str):
         # 合成成功即将数据存入文件
         with open("result.wav", 'wb') as of:
             of.write(result_str)
-        time.sleep(3)
-        notifyPipe.send("ASSISTANT_WAITING")
-        time.sleep(5)
-        notifyPipe.send("ASSISTANT_CLOSE")
+    notifyPipe.send("ASSISTANT_ANSWER", {
+        "content": TEXT
+    })
+    return True
+
+def play_audio(stream, filename):
+    #pa=pyaudio.PyAudio()
+    #stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
+    #stream.start_stream()
+    wf = wave.open(filename, 'rb')
+    while True:
+        data = wf.readframes(2048)
+        if data == b"": break
+        stream.write(data)
+    #stream.stop_stream()
+    #stream.close()
+    time.sleep(0.01)
+    wf.close()
 
 
 def detected_callback():
-    record()
-    recognize()
+    pa=pyaudio.PyAudio()
+    stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
+    record(stream)
+    if recognize():
+        play_audio(stream,"result.wav")
+    else:
+        play_audio(stream,"error.wav")
+    stream.stop_stream()
+    stream.close()
+    notifyPipe.send("ASSISTANT_WAITING")
+    time.sleep(5)
+    notifyPipe.send("ASSISTANT_CLOSE")
+
 
 def main(pipe: Pipe):
     init_module(pipe)
     log('启动！')
     # 主代码从这里开始
-
     while True:
         log("Start Listen!")
         try:
             detector.start(detected_callback=detected_callback,
                 interrupt_check=interrupt_callback,
                 sleep_time=0.03)
-        except:
+        finally:
             detector.terminate()
+    
