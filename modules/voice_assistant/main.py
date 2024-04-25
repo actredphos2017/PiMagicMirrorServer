@@ -3,15 +3,27 @@ import time
 import wave
 from typing import Callable
 from urllib import request, parse
+from modules.voice_assistant import snowboydecoder
+
 
 import pyaudio
 from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from pipe import Pipe, Notification
+from utils.eylink_gpt import chat
 
 notifyPipe: Pipe
 log: Callable
+
+detector = snowboydecoder.HotwordDetector("MagicMirror.pmdl", sensitivity=0.5)
+
+interrupted = False
+
+
+def interrupt_callback():
+    global interrupted
+    return interrupted
 
 
 def init_module(pipe: Pipe):
@@ -19,56 +31,6 @@ def init_module(pipe: Pipe):
     global notifyPipe, log
     notifyPipe = pipe
     log = Notification.create_notifier(pipe, "语音助手")
-
-
-def simulation_assistant():
-    log("模拟开始语音助手")
-    notifyPipe.send("ASSISTANT_BEGIN")
-
-    time.sleep(1)
-
-    log("模拟语音识别过程")
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今",
-        "end": False
-    })
-    time.sleep(0.2)
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今天",
-        "end": False
-    })
-    time.sleep(0.2)
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今天天气",
-        "end": False
-    })
-    time.sleep(0.2)
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今天天气怎么",
-        "end": False
-    })
-    time.sleep(0.2)
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今天天气怎么样",
-        "end": False
-    })
-    time.sleep(0.5)
-    notifyPipe.send("ASSISTANT_ASK", {
-        "content": "今天天气怎么样",
-        "end": True
-    })
-
-    time.sleep(2)
-
-    log("模拟语音助手回应")
-    notifyPipe.send("ASSISTANT_ANSWER", {
-        "content": "杭州市今天天气小雨转阴，气温13到20摄氏度，出门注意带伞哦",
-    })
-
-    time.sleep(5)
-
-    log("模拟结束语音助手")
-    notifyPipe.send("ASSISTANT_CLOSE")
 
 
 def usage():
@@ -84,7 +46,7 @@ def usage():
     })
 
 
-def demo():
+def record():
     notifyPipe.send("ASSISTANT_BEGIN")
     # 实例化一个PyAudio对象
     pa = pyaudio.PyAudio()
@@ -171,16 +133,17 @@ def recognize():
         "content": content,
         "end": True
     })
+    answer = chat(content)
+    notifyPipe.send("ASSISTANT_ANSWER", {
+        "content": answer
+    })
+    # output(answer)
 
 
-def output():
-    time.sleep(2)
+def output(TEXT: str):
     token = get_token()
     # 2、将需要合成的文字做2次urlencode编码
-    TEXT = "原神，启动"
-    notifyPipe.send("ASSISTANT_ANSWER", {
-        "content": TEXT
-    })
+    
     tex = parse.quote_plus(TEXT)  # 两次urlencode
     # 3、设置文本以及其他参数
     params = {'tok': token,  # 开放平台获取到的开发者access_token
@@ -212,10 +175,20 @@ def output():
         notifyPipe.send("ASSISTANT_CLOSE")
 
 
+def detected_callback():
+    record()
+    recognize()
+
 def main(pipe: Pipe):
     init_module(pipe)
     log('启动！')
     # 主代码从这里开始
-    #demo()
-    recognize()
-    #output()
+
+    while True:
+        log("Start Listen!")
+        try:
+            detector.start(detected_callback=detected_callback,
+                interrupt_check=interrupt_callback,
+                sleep_time=0.03)
+        except:
+            detector.terminate()
