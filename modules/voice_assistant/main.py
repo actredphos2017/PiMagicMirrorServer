@@ -4,11 +4,8 @@ import wave
 from typing import Callable
 from urllib import request, parse
 from modules.voice_assistant import snowboydecoder
-
-
 import pyaudio
 from tqdm import tqdm
-
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from pipe import Pipe, Notification
 from utils.eylink_gpt import chat
@@ -91,7 +88,7 @@ def get_token():
         print('token http response http code : ' + str(err))
 
 
-def recognize() -> bool:
+def recognize() -> int:
     token = get_token()
     # 2、打开需要识别的语音文件
     speech_data = []
@@ -139,12 +136,17 @@ def recognize() -> bool:
     
 
 
-def output(TEXT: str | None = None) -> bool:
+def output(TEXT: str | None = None) -> int:
     if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "Sorry.I don't get you."
         })
-        return False
+        return 0
+    elif len(TEXT)>=20:
+        notifyPipe.send("ASSISTANT_ANSWER", {
+            "content": TEXT
+        })
+        return 1
     token = get_token()
     # 2、将需要合成的文字做2次urlencode编码
     tex = parse.quote_plus(TEXT)  # 两次urlencode
@@ -175,7 +177,7 @@ def output(TEXT: str | None = None) -> bool:
     notifyPipe.send("ASSISTANT_ANSWER", {
         "content": TEXT
     })
-    return True
+    return 2
 
 def play_audio(stream, filename):
     #pa=pyaudio.PyAudio()
@@ -196,8 +198,11 @@ def detected_callback():
     pa=pyaudio.PyAudio()
     stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
     record(stream)
-    if recognize():
+    result=recognize()
+    if result==2:
         play_audio(stream,"result.wav")
+    elif result==1:
+        play_audio(stream,"tooLong.wav")
     else:
         play_audio(stream,"error.wav")
     stream.stop_stream()
