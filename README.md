@@ -1,6 +1,6 @@
 # Pi Magic Mirror Server
 
-> This project is designed for the *Pi Magic Mirror*, and should be detected together with it.
+> This project is designed for the *Pi Magic Mirror*, and should be deployed together with it.
 
 ## Requirement
 
@@ -32,7 +32,7 @@ sox
 
 ## Deploy
 
-Navigate to the directory containing PiMagicMirrorServer and update dependencies using pipenv:
+Navigate to the project directory of PiMagicMirrorServer and update dependencies using pipenv:
 
 ``` sh
 cd path/to/PiMagicMirrorServer
