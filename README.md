@@ -1,6 +1,6 @@
 # Pi Magic Mirror Server
 
-> This project is designed for the *Pi Magic Mirror*, and should be deployed together with it.
+> This project is designed for the [**Pi Magic Mirror**](https://github.com/actredphos2017/PiMagicMirror), and should be deployed together with it.
 
 ## Requirement
 
