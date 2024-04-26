@@ -19,7 +19,7 @@ apt install pipenv
 Ensure the following packages are installed:
 
 ```
-libasound-dev portaudio19-dev libportaudio2 libportaudocpp0 pulseaudio swig libatlas-base-dev libglib2.0-dev
+libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 pulseaudio swig libatlas-base-dev libglib2.0-dev
 ```
 
 > You can use your any favorite package manager to install above packages.
