@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
 from typing import Callable
-
-import websockets
 
 import utils.websocket_server as websocket_server
 from pipe import Pipe, Notification, Event

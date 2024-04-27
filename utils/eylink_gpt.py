@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import requests
 
 from api_key_loader import EYLINK_GPT_API
