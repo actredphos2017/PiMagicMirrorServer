@@ -62,10 +62,6 @@ def calculate_volume(audio_data) -> list[float]:
 
 def record(stream: pyaudio.Stream):
     notifyPipe.send("ASSISTANT_BEGIN")
-    # 实例化一个PyAudio对象
-    # pa = pyaudio.PyAudio()
-    # 打开声卡，设置 采样深度为16位、声道数为1、采样率为16、输入、采样点缓存数量为2048
-    # stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=2048)
     # 新建一个列表，用来存储采样到的数据
     record_buf = []
     count = 0
@@ -91,24 +87,18 @@ def record(stream: pyaudio.Stream):
     wf.setframerate(16000)  # 设置采样率为16000
     # 将数据写入创建的音频文件
     wf.writeframes("".encode().join(record_buf))
-    # 写完后将文件关闭
     wf.close()
-    # 停止声卡
-    # stream.stop_stream()
-    # 关闭声卡
-    # stream.close()
-    # 终止pyaudio
-    # pa.terminate()
 
 
 def get_token():
-    API_Key = BAIDU_SPEECH_API  # 官网获取的API_Key
-    Secret_Key = BAIDU_SPEECH_SECRET  # 为官网获取的Secret_Key
     # 拼接得到Url
-    Url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={API_Key}&client_secret={Secret_Key}"
     try:
-        resp = request.urlopen(Url)
-        result = json.loads(resp.read().decode('utf-8'))
+        result = requests.get(
+            f"https://aip.baidubce.com/oauth/2.0/token?"
+            f"grant_type=client_credentials&"
+            f"client_id={BAIDU_SPEECH_API}&"
+            f"client_secret={BAIDU_SPEECH_SECRET}"
+        ).json()
         # 打印access_token
         print("access_token:", result['access_token'])
         return result['access_token']
@@ -127,9 +117,11 @@ def recognize() -> int:
         print('file 01.wav length read 0 bytes')
 
     # 3、设置Url里的参数
-    params = {'cuid': "12345678python",  # 用户唯一标识，用来区分用户，长度为60字符以内。
-              'token': token,  # 我们获取到的 Access Token
-              'dev_pid': 1537}  # 1537 表示识别普通话
+    params = {
+        'cuid': "12345678python",
+        'token': token,
+        'dev_pid': 1537
+    }
     # 将参数编码
     params_query = parse.urlencode(params)
     # 拼接成一个我们需要的完整的完整的url
@@ -145,7 +137,7 @@ def recognize() -> int:
     print(result)
     try:
         content = result['result'][0]
-        log("Recognize Result:", content)
+        log("Recognize Result Length:", len(content))
 
         notifyPipe.send("ASSISTANT_ASK", {
             "content": content,
@@ -216,7 +208,31 @@ def play_audio(stream, filename):
     wf.close()
 
 
+close_assistant_timer: threading.Timer | None = None
+
+
+def close_assistant():
+    global close_assistant_timer
+    notifyPipe.send("ASSISTANT_CLOSE")
+    close_assistant_timer = None
+
+
+def wait_for_close_assistant():
+    global close_assistant_timer
+    notifyPipe.send("ASSISTANT_WAITING")
+    close_assistant_timer = threading.Timer(5, close_assistant)
+
+
+def interrupt_close_assistant():
+    if close_assistant_timer is not None:
+        try:
+            close_assistant_timer.cancel()
+        except:
+            pass
+
+
 def detected_callback():
+    interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
     record(stream)
@@ -229,9 +245,7 @@ def detected_callback():
         play_audio(stream, "error.wav")
     stream.stop_stream()
     stream.close()
-    notifyPipe.send("ASSISTANT_WAITING")
-    time.sleep(5)
-    notifyPipe.send("ASSISTANT_CLOSE")
+    wait_for_close_assistant()
 
 
 def main(pipe: Pipe):
