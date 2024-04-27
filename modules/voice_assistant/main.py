@@ -9,6 +9,7 @@ from tqdm import tqdm
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from pipe import Pipe, Notification
 from utils.eylink_gpt import chat
+import numpy as np
 
 notifyPipe: Pipe
 log: Callable
@@ -42,6 +43,13 @@ def usage():
         "prompt": "下午"
     })
 
+def calculate_volume(audio_data):
+    # 将二进制数据转换为numpy数组
+    audio_array = np.frombuffer(audio_data, dtype=np.int16)
+    # 计算均方根
+    rms = np.sqrt(np.mean(audio_array ** 2))
+    return rms
+
 
 def record(stream):
     notifyPipe.send("ASSISTANT_BEGIN")
@@ -56,6 +64,9 @@ def record(stream):
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
+        volume = calculate_volume(audio_data)
+        # 输出音量信息
+        log("Volume:", volume)
         log('*')
     wf = wave.open('01.wav', 'wb')  # 创建一个音频文件，名字为“01.wav"
     wf.setnchannels(1)  # 设置声道数为2

@@ -10,6 +10,7 @@ pyaudio = "*"
 requests = "*"
 tqdm = "*"
 python-dotenv = "*"
+numpy = "*"
 
 [dev-packages]
 
