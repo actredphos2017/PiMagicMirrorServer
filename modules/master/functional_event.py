@@ -6,7 +6,7 @@ from utils.caiyun_weather import get_weather
 
 
 def to_update_weather(_, pipe: Pipe):
-    log = Notification.create_notifier(pipe, "天气之子")
+    log = Notification.create_notifier(pipe, "WEATHER")
 
     def update_weather():
         updateResponse = get_weather()

@@ -11,7 +11,7 @@ log: Callable[[str], None]
 def init_module(pipe: Pipe):
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "管理员")
+    log = Notification.create_notifier(pipe, "MASTER")
 
 
 def main(pipe: Pipe):
@@ -19,4 +19,4 @@ def main(pipe: Pipe):
     init_transmission_event_handler(pipe)
     init_functional_event_handler(pipe)
 
-    log('启动！')
+    log('START!')

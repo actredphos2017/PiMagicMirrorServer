@@ -12,7 +12,7 @@ def init_module(pipe: Pipe):
     # 模块初始化
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "人脸识别")
+    log = Notification.create_notifier(pipe, "FACIAL")
 
 
 def demo():
@@ -34,7 +34,7 @@ def demo():
 
 def main(pipe: Pipe):
     init_module(pipe)
-    log('启动！')
+    log('START!')
 
     # 主代码从这里开始
 

@@ -34,15 +34,15 @@ def init_module(pipe: Pipe):
     # 模块初始化
     global notifyPipe, log
     notifyPipe = pipe
-    log = Notification.create_notifier(pipe, "语音助手")
+    log = Notification.create_notifier(pipe, "ASSISTANT")
 
 
 def usage():
-    log("设置便签")
+    log("Set Note")
     notifyPipe.send("ASSISTANT_SET_NOTE", {
         "content": "购买西红柿"
     })
-    log("添加日程")
+    log("Add Schedule")
     notifyPipe.send("ASSISTANT_ADD_SCHEDULE", {
         "content": "开会",
         "time": "2025-07-21T14:00:00",
@@ -145,14 +145,14 @@ def recognize() -> int:
     print(result)
     try:
         content = result['result'][0]
-        log("识别结果:", content)
+        log("Recognize Result:", content)
 
         notifyPipe.send("ASSISTANT_ASK", {
             "content": content,
             "end": True
         })
         answer = chat(content)
-        log(answer)
+        log("Answer Length:", len(answer))
         return output(answer)
     except:
         return output()
@@ -236,7 +236,7 @@ def detected_callback():
 
 def main(pipe: Pipe):
     init_module(pipe)
-    log('启动！')
+    log('START!')
     # 主代码从这里开始
     while True:
         log("Start Listen!")
