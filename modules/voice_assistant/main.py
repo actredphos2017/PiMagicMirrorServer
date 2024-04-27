@@ -5,6 +5,9 @@ import time
 import wave
 from typing import Callable
 from urllib import request, parse
+
+import requests
+
 from modules.voice_assistant import snowboydecoder
 import pyaudio
 from tqdm import tqdm
@@ -46,15 +49,17 @@ def usage():
     })
 
 
-def calculate_volume(audio_data) -> float:
+def calculate_volume(audio_data) -> list[float]:
     # 将二进制数据转换为numpy数组
     audio_array = np.frombuffer(audio_data, dtype=np.int16)
-    # 计算均方根
-    rms = np.sqrt(np.mean(audio_array ** 2))
-    return rms
+    audio_arrays = np.split(audio_array, 8)
+    return list(np.nan_to_num(np.array(map(
+        lambda aa: np.sqrt(np.mean(np.nan_to_num(aa, nan=0) ** 2)),
+        audio_arrays
+    )), nan=0))
 
 
-def record(stream):
+def record(stream: pyaudio.Stream):
     notifyPipe.send("ASSISTANT_BEGIN")
     # 实例化一个PyAudio对象
     # pa = pyaudio.PyAudio()
@@ -64,25 +69,19 @@ def record(stream):
     record_buf = []
     count = 0
     flag = True
-    volume = 0.0
+    audio_data: bytes | None = None
 
     def check_volume():
         while flag:
-            time.sleep(0.2)
-            log(volume)
-            notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": volume})
+            time.sleep(0.1)
+            if audio_data is not None:
+                notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
 
-    # threading.Thread(target=check_volume).start()
+    threading.Thread(target=check_volume).start()
     for _ in tqdm(range(8 * 5)):
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
-        volume = calculate_volume(audio_data)
-        # 输出音量信息
-        try:
-            log("Volume:", "O" * math.floor(volume / 5))
-        except:
-            pass
 
     flag = False
     wf = wave.open('01.wav', 'wb')  # 创建一个音频文件，名字为“01.wav"
@@ -133,20 +132,15 @@ def recognize() -> int:
     # 将参数编码
     params_query = parse.urlencode(params)
     # 拼接成一个我们需要的完整的完整的url
-    Url = 'http://vop.baidu.com/server_api' + "?" + params_query
 
-    # 4、设置请求头
-    headers = {
-        'Content-Type': 'audio/wav; rate=16000',  # 采样率和文件格式
-        'Content-Length': length
-    }
-
-    # 5、发送请求，音频数据直接放在body中
-    # 构建Request对象
-    req = request.Request(Url, speech_data, headers)
-    # 发送请求
-    res_f = request.urlopen(req)
-    result = json.loads(res_f.read().decode('utf-8'))
+    result = requests.post(
+        f'http://vop.baidu.com/server_api?{params_query}',
+        data=speech_data,
+        headers={
+            'Content-Type': 'audio/wav; rate=16000',  # 采样率和文件格式
+            'Content-Length': str(length)
+        }
+    ).json()
     print(result)
     try:
         content = result['result'][0]
@@ -163,21 +157,23 @@ def recognize() -> int:
         return output()
 
 
-def output(TEXT: str | None = None) -> int:
+def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
+    if hints is None:
+        hints = []
     if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
-            "content": "Sorry.I don't get you."
+            "content": "Sorry.I don't get you.",
+            "hints": hints
         })
         return 0
     elif len(TEXT) >= 20:
         notifyPipe.send("ASSISTANT_ANSWER", {
-            "content": TEXT
+            "content": TEXT,
+            "hints": hints
         })
         return 1
     token = get_token()
-    # 2、将需要合成的文字做2次urlencode编码
-    tex = parse.quote_plus(TEXT)  # 两次urlencode
-    # 3、设置文本以及其他参数
+    tex = parse.quote_plus(TEXT)
     params = {'tok': token,  # 开放平台获取到的开发者access_token
               'tex': tex,  # 合成的文本，使用UTF-8编码。小于2048个中文字或者英文数字
               'per': 4,  # 发音人选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
@@ -202,22 +198,19 @@ def output(TEXT: str | None = None) -> int:
         with open("result.wav", 'wb') as of:
             of.write(result_str)
     notifyPipe.send("ASSISTANT_ANSWER", {
-        "content": TEXT
+        "content": TEXT,
+        "hints": hints
     })
     return 2
 
 
 def play_audio(stream, filename):
-    # pa=pyaudio.PyAudio()
-    # stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
-    # stream.start_stream()
     wf = wave.open(filename, 'rb')
     while True:
         data = wf.readframes(2048)
-        if data == b"": break
+        if data == b"":
+            break
         stream.write(data)
-    # stream.stop_stream()
-    # stream.close()
     time.sleep(0.01)
     wf.close()
 

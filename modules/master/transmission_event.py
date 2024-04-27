@@ -47,6 +47,7 @@ def init_transmission_event_handler(pipe: Pipe):
     pipe.on("FACE_LEAVE", transfer_only)
 
     pipe.on("ASSISTANT_BEGIN", transfer_only)
+    pipe.on("ASSISTANT_ASK_VOLUME", transfer_only)
     pipe.on("ASSISTANT_ASK", transfer_only)
     pipe.on("ASSISTANT_ANSWER", transfer_only)
     pipe.on("ASSISTANT_WAITING", transfer_only)
