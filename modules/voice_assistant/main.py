@@ -1,4 +1,6 @@
 import json
+import math
+import threading
 import time
 import wave
 from typing import Callable
@@ -43,7 +45,8 @@ def usage():
         "prompt": "下午"
     })
 
-def calculate_volume(audio_data):
+
+def calculate_volume(audio_data) -> float:
     # 将二进制数据转换为numpy数组
     audio_array = np.frombuffer(audio_data, dtype=np.int16)
     # 计算均方根
@@ -54,20 +57,34 @@ def calculate_volume(audio_data):
 def record(stream):
     notifyPipe.send("ASSISTANT_BEGIN")
     # 实例化一个PyAudio对象
-    #pa = pyaudio.PyAudio()
+    # pa = pyaudio.PyAudio()
     # 打开声卡，设置 采样深度为16位、声道数为1、采样率为16、输入、采样点缓存数量为2048
-    #stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=2048)
+    # stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=2048)
     # 新建一个列表，用来存储采样到的数据
     record_buf = []
     count = 0
-    for i in tqdm(range(8 * 5)):
+    flag = True
+    volume = 0.0
+
+    def check_volume():
+        while flag:
+            time.sleep(0.2)
+            log(volume)
+            notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": volume})
+
+    # threading.Thread(target=check_volume).start()
+    for _ in tqdm(range(8 * 5)):
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
         volume = calculate_volume(audio_data)
         # 输出音量信息
-        log("Volume:", volume)
-        log('*')
+        try:
+            log("Volume:", "O" * math.floor(volume / 5))
+        except:
+            pass
+
+    flag = False
     wf = wave.open('01.wav', 'wb')  # 创建一个音频文件，名字为“01.wav"
     wf.setnchannels(1)  # 设置声道数为2
     wf.setsampwidth(2)  # 设置采样深度为
@@ -77,11 +94,11 @@ def record(stream):
     # 写完后将文件关闭
     wf.close()
     # 停止声卡
-    #stream.stop_stream()
+    # stream.stop_stream()
     # 关闭声卡
-    #stream.close()
+    # stream.close()
     # 终止pyaudio
-    #pa.terminate()
+    # pa.terminate()
 
 
 def get_token():
@@ -144,7 +161,6 @@ def recognize() -> int:
         return output(answer)
     except:
         return output()
-    
 
 
 def output(TEXT: str | None = None) -> int:
@@ -153,7 +169,7 @@ def output(TEXT: str | None = None) -> int:
             "content": "Sorry.I don't get you."
         })
         return 0
-    elif len(TEXT)>=20:
+    elif len(TEXT) >= 20:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": TEXT
         })
@@ -190,32 +206,33 @@ def output(TEXT: str | None = None) -> int:
     })
     return 2
 
+
 def play_audio(stream, filename):
-    #pa=pyaudio.PyAudio()
-    #stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
-    #stream.start_stream()
+    # pa=pyaudio.PyAudio()
+    # stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
+    # stream.start_stream()
     wf = wave.open(filename, 'rb')
     while True:
         data = wf.readframes(2048)
         if data == b"": break
         stream.write(data)
-    #stream.stop_stream()
-    #stream.close()
+    # stream.stop_stream()
+    # stream.close()
     time.sleep(0.01)
     wf.close()
 
 
 def detected_callback():
-    pa=pyaudio.PyAudio()
-    stream =pa.open(format = pyaudio.paInt16, channels = 1,rate = 16000, input = True,output=True, frames_per_buffer = 2048)
+    pa = pyaudio.PyAudio()
+    stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
     record(stream)
-    result=recognize()
-    if result==2:
-        play_audio(stream,"result.wav")
-    elif result==1:
-        play_audio(stream,"tooLong.wav")
+    result = recognize()
+    if result == 2:
+        play_audio(stream, "result.wav")
+    elif result == 1:
+        play_audio(stream, "tooLong.wav")
     else:
-        play_audio(stream,"error.wav")
+        play_audio(stream, "error.wav")
     stream.stop_stream()
     stream.close()
     notifyPipe.send("ASSISTANT_WAITING")
@@ -231,8 +248,7 @@ def main(pipe: Pipe):
         log("Start Listen!")
         try:
             detector.start(detected_callback=detected_callback,
-                interrupt_check=interrupt_callback,
-                sleep_time=0.03)
+                           interrupt_check=interrupt_callback,
+                           sleep_time=0.03)
         finally:
             detector.terminate()
-    
