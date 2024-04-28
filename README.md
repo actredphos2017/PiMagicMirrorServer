@@ -6,7 +6,7 @@
 
 This Project recommended to be deployed on **Linux Platform** or other Unix-like os.
 
-Ensure that a `python (3.10^)` with `pip` and `pipenv` is installed.
+Ensure that a `python (3.9^)` with `pip` and `pipenv` is installed.
 
 Most of the time you can use following shell script to install above.
 
