@@ -32,6 +32,29 @@ sox
 
 ## Deploy
 
+### Directly or With Virtual Environment
+
+Make sure your python version is at least **v3.9**:
+
+``` sh
+python --version
+```
+
+Install the requirement packages:
+
+``` sh
+cd path/to/PiMagicMirrorServer
+pip install -r requirements.txt
+```
+
+Start the Server:
+
+``` sh
+python main.py
+```
+
+### With Pipenv
+
 Navigate to the project directory of PiMagicMirrorServer and update dependencies using pipenv:
 
 ``` sh
