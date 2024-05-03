@@ -40,7 +40,7 @@ python --version
 
 #### Clone the repository
 
-Some of the requirements packages are not available in pip repository. So need to build ourselves.
+Some of the requirements packages are not available in pip repository. So need to clone their repository and build ourselves.
 
 ``` sh
 cd path/to/deploy/projects
