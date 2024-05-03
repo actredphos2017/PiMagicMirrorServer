@@ -12,14 +12,12 @@ Most of the time you can use following shell script to install above.
 
 ``` sh
 apt install python3 python3-pip
-pip install pipenv
-apt install pipenv
 ```
 
 Ensure the following packages are installed:
 
 ```
-libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 pulseaudio swig libatlas-base-dev libglib2.0-dev
+libasound-dev portaudio19-dev libportaudio2 libportaudiocpp0 pulseaudio swig libatlas-base-dev libglib2.0-dev libbluetooth-dev
 ```
 
 > You can use your any favorite package manager to install above packages.
@@ -40,42 +38,41 @@ Make sure your python version is at least **v3.9**:
 python --version
 ```
 
+#### Clone the repository
+
+Some of the requirements packages are not available in pip repository. So need to build ourselves.
+
+``` sh
+cd path/to/deploy/projects
+
+git clone https://github.com/actredphos2017/PiMagicMirrorServer.git
+
+# This repository's cloning just to build and install package "pybluez"
+# You can remove after install
+git clone https://github.com/pybluez/pybluez.git
+```
+
+#### Build and Install PyBluez
+
+``` sh
+cd pybluez
+
+python setup.py install
+pip list | grep PyBluez
+
+cd ..
+```
+
+#### Install Other Packages
+
 Install the requirement packages:
 
 ``` sh
-cd path/to/PiMagicMirrorServer
+cd PiMagicMirrorServer
 pip install -r requirements.txt
 ```
 
 Start the Server:
-
-``` sh
-python main.py
-```
-
-### With Pipenv
-
-Navigate to the project directory of PiMagicMirrorServer and update dependencies using pipenv:
-
-``` sh
-cd path/to/PiMagicMirrorServer
-pipenv update
-```
-
-If you encounter an error stating that pipenv cannot find the path to Python, configure it using:
-
-``` sh
-pipenv --python python3
-pipenv update
-```
-
-Then use following command to activate the pipenv shell:
-
-``` sh
-pipenv shell
-```
-
-Start the server:
 
 ``` sh
 python main.py
