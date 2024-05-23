@@ -163,22 +163,22 @@ def recognize() -> int:
     print(result)
     try:
         content = result['result'][0]
-        log("Recognize Result Length:", len(content))
+        log("Recognize Result:", content)
 
         notifyPipe.send("ASSISTANT_ASK", {
             "content": content,
             "end": True
         })
-
+   
         if is_weather_query(content):
             weather_info = get_weather()
             if isinstance(weather_info, dict):
-                description =weather_map[weather_info['result']['skycon']]
+                description =weather_map[weather_info['result']['realtime']['skycon']]
                 temp = weather_info['result']['realtime']['temperature']
                 humidity =weather_info['result']['realtime']['humidity']*100
                 wind_speed = weather_info['result']['realtime']['wind']['speed']
-                forcast= weather_info['result']['minutely']['forecast_keypoint']
-                answer = f"当前天气{description}，气温{temp}度，湿度{humidity}%，风速是{wind_speed}米每秒。{forcast}"
+                forcast= weather_info['result']['forecast_keypoint']
+                answer = f"当前天气{description}，气温{temp}度，湿度{int(humidity)}%，风速是{wind_speed}米每秒。{forcast}"
             else:
                 answer = "获取天气信息失败。"
         else:
