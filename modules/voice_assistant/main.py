@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-import json
 import threading
 import time
 import wave
 from typing import Callable
 from urllib import request, parse
 
-import requests
-
-from modules.voice_assistant import snowboydecoder
+import numpy as np
 import pyaudio
+import requests
 from tqdm import tqdm
+
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
+from modules.voice_assistant import snowboydecoder
 from pipe import Pipe, Notification
 from utils.caiyun_weather import get_weather
 from utils.eylink_gpt import chat
-import numpy as np
 
 notifyPipe: Pipe
 log: Callable
@@ -46,6 +45,7 @@ weather_map = {
     "SAND": "沙尘",
     "WIND": "大风"
 }
+
 
 def interrupt_callback():
     global interrupted
@@ -127,6 +127,7 @@ def get_token():
     except Exception as err:
         print('token http response http code : ' + str(err))
 
+
 def is_weather_query(content: str) -> bool:
     weather_keywords = ["天气", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
     return any(keyword in content for keyword in weather_keywords)
@@ -169,21 +170,21 @@ def recognize() -> int:
             "content": content,
             "end": True
         })
-   
+
         if is_weather_query(content):
             weather_info = get_weather()
             if isinstance(weather_info, dict):
-                description =weather_map[weather_info['result']['realtime']['skycon']]
+                description = weather_map[weather_info['result']['realtime']['skycon']]
                 temp = weather_info['result']['realtime']['temperature']
-                humidity =weather_info['result']['realtime']['humidity']*100
+                humidity = weather_info['result']['realtime']['humidity'] * 100
                 wind_speed = weather_info['result']['realtime']['wind']['speed']
-                forcast= weather_info['result']['forecast_keypoint']
+                forcast = weather_info['result']['forecast_keypoint']
                 answer = f"当前天气{description}，气温{temp}度，湿度{int(humidity)}%，风速是{wind_speed}米每秒。{forcast}"
             else:
                 answer = "获取天气信息失败。"
         else:
             answer = chat(content)
-
+        return output(answer)
     except:
         return output()
 
