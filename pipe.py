@@ -37,7 +37,7 @@ class Pipe:
         while True:
             notification: Event = self.msgQueue.get()
             for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
-                subscriber.notify(notification, self)
+                threading.Thread(target=lambda: subscriber.notify(notification, self)).start()
 
     def send(self, flag: str, msg: dict | None = None) -> None:
         self.msgQueue.put(Event(flag, msg))
@@ -91,6 +91,7 @@ if __name__ == '__main__':
         time.sleep(5.5)
         test_pipe.remove_subscriber(test_subscriber)
         test_pipe.on("WORLD", lambda event, _: print(event.data))
+
 
     # 创建两个线程，分别执行上面创建的任务
     threading.Thread(target=work).start()
