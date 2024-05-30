@@ -52,8 +52,8 @@ def main(pipe: Pipe):
     websocket_server.run_websocket_server(
         host="localhost",
         port=8083,
-        on_connected=lambda: log(f"WEBSOCKET OPEN!"),
+        on_connected=lambda: log("WEBSOCKET OPEN!"),
         on_receive=handle_receive,
         on_disconnect=lambda: log("WEBSOCKET CLOSE!"),
-        on_error=lambda e: log(f"ERROR OCCURRED:", e)
+        on_error=lambda e: log("ERROR OCCURRED:", e)
     )
