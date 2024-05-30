@@ -1,8 +1,17 @@
 import json
 
 from modules.messanger.main import external_event
-from orm import Session, UserInfo, LocalStorage
-from pipe import Event, Pipe
+from utils.orm import Session, UserInfo, LocalStorage
+from utils.pipe import Event, Pipe
+
+
+def transfer_only(event: Event, pipe: Pipe):
+    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+
+
+def handle_user_leave(event: Event, pipe: Pipe):
+    LocalStorage.remove("AVAILABLE_FACE_ID")
+    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
 
 
 def handle_user_enter(event: Event, pipe: Pipe):
@@ -13,6 +22,7 @@ def handle_user_enter(event: Event, pipe: Pipe):
             session.add(UserInfo(faceid=faceid))
             session.commit()
             user = session.query(UserInfo).get(faceid)
+        LocalStorage.set("AVAILABLE_FACE_ID", faceid)
         pipe.send("EXTERNAL_SEND", external_event("FACE_ENTER", {
             "faceid": faceid,
             "setting": json.loads(user.setting),
@@ -23,10 +33,6 @@ def handle_user_enter(event: Event, pipe: Pipe):
 
 def handle_external_event(event: Event, pipe: Pipe):
     pipe.send(event.data['event'], event.data.get('data'))
-
-
-def transfer_only(event: Event, pipe: Pipe):
-    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
 
 
 def handle_environment_active(event: Event, pipe: Pipe):
@@ -44,7 +50,7 @@ def init_transmission_event_handler(pipe: Pipe):
     pipe.on("ENVIRONMENT_ACTIVE", handle_environment_active)
     pipe.on("ENVIRONMENT_SILENT", handle_environment_silent)
     pipe.on("FACE_ENTER", handle_user_enter)
-    pipe.on("FACE_LEAVE", transfer_only)
+    pipe.on("FACE_LEAVE", handle_user_leave)
 
     pipe.on("ASSISTANT_BEGIN", transfer_only)
     pipe.on("ASSISTANT_ASK_VOLUME", transfer_only)

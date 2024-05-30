@@ -20,7 +20,7 @@ class Subscriber:
     def __init__(
             self,
             flag: str = "",
-            handler: Callable[[Event, any], None] = lambda _: None,
+            handler: Callable[[Event, any], None] = lambda _, __: None,
             receive_all: bool = False
     ):
         self.receive_all = receive_all
@@ -32,15 +32,27 @@ class Pipe:
     def __init__(self, maxsize=1000):
         self.msgQueue = Queue(maxsize=maxsize)
         self.subscribers: list[Subscriber] = []
+        self.lock = threading.Lock()
+        self.lock.acquire()
 
     def hold(self) -> None:
         while True:
             notification: Event = self.msgQueue.get()
-            for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
-                subscriber.notify(notification, self)
+            if notification.flag == "__DISPATCHER_MAIN__":
+                fun = notification.data.get("function")
+                if fun is not None:
+                    fun()
+                self.lock.release()
+            else:
+                for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
+                    threading.Thread(target=lambda: subscriber.notify(notification, self)).start()
 
     def send(self, flag: str, msg: dict | None = None) -> None:
         self.msgQueue.put(Event(flag, msg))
+
+    def run_on_main_thread(self, function: Callable[[], None]):
+        self.send("__DISPATCHER_MAIN__", {"function": function})
+        self.lock.acquire()
 
     def subscribe(self, subscriber: Subscriber) -> bool:
         if subscriber in self.subscribers:
@@ -48,7 +60,7 @@ class Pipe:
         self.subscribers.append(subscriber)
         return True
 
-    def on(self, flag: str, handler: Callable[[Event, any], None]) -> Subscriber:
+    def on(self, flag: str, handler: Callable[[Event, Pipe], None]) -> Subscriber:
         subscriber = Subscriber(flag, handler)
         self.subscribers.append(subscriber)
         return subscriber
@@ -91,6 +103,7 @@ if __name__ == '__main__':
         time.sleep(5.5)
         test_pipe.remove_subscriber(test_subscriber)
         test_pipe.on("WORLD", lambda event, _: print(event.data))
+
 
     # 创建两个线程，分别执行上面创建的任务
     threading.Thread(target=work).start()

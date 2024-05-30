@@ -1,7 +1,7 @@
 import threading
 
-from orm import LocalStorage
-from pipe import Pipe, Notification
+from utils.orm import LocalStorage
+from utils.pipe import Pipe, Notification
 from utils.caiyun_weather import get_weather
 
 
