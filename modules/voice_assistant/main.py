@@ -183,7 +183,7 @@ def recognize() -> int:
                 answer = "获取天气信息失败。"
         else:
             answer = chat(content)
-
+        return output(answer)
     except:
         return output()
 
