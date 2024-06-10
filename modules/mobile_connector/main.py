@@ -15,7 +15,6 @@ notifyPipe: Pipe
 log: Callable
 
 service_uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
-bluetooth_port = 1
 
 
 def run_sys_cmd(cmd: str):
@@ -50,15 +49,15 @@ def main(pipe: Pipe):
     advertise_retry_count = 0
 
     while True:
-        server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-
-        server_sock.bind(("", bluetooth.PORT_ANY))
-        server_sock.listen(10)
-
-        port = server_sock.getsockname()[1]
-        addr = bluetooth.read_local_bdaddr()[0]
-
         try:
+            server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+
+            server_sock.bind(("", bluetooth.PORT_ANY))
+            server_sock.listen(10)
+
+            port = server_sock.getsockname()[1]
+            addr = bluetooth.read_local_bdaddr()[0]
+
             bluetooth.advertise_service(
                 server_sock,
                 "MagicMirrorServer",
@@ -67,27 +66,30 @@ def main(pipe: Pipe):
                 profiles=[bluetooth.SERIAL_PORT_PROFILE]
             )
             advertise_retry_count = 0
-        except Exception as e:
-            log("Advertise Failed! Exception Track:", e)
 
-            if advertise_retry_count >= 10:
-                raise Exception("Too many advertise retry! Module stop!")
+            log("OPEN Bluetooth Advertise Service!")
+            log(f"Local Address: {addr} Port: {port} Service UUID: {service_uuid}")
 
-            log("STOP! Wait For Restart...")
-            advertise_retry_count += 1
-            time.sleep(1)
-            continue
-
-        log("OPEN Bluetooth Advertise Service!")
-        log(f"Local Address: {addr} Port: {port} Service UUID: {service_uuid}")
-
-        try:
             while True:
                 client_sock, address = server_sock.accept()
                 log("Client Connection Open:", address)
                 threading.Thread(target=lambda: handle_accept(client_sock, address)).start()
+
         except Exception as e:
-            server_sock.close()
-            log("MEET ERROR", e)
-            log("STOP! Wait For Restart...")
+            log("RFCOMM Service Meet Exception:", e)
+
+            if str(e).startswith("[Errno 100]"):
+                raise Exception("System bluetooth is not open! Module stop!")
+            elif str(e).startswith("[Errno 13]"):
+                raise Exception("Please run this program with 'sudo'!")
+            elif str(e).startswith("[Errno 111]"):
+                raise Exception("Edit /lib/systemd/system/bluetooth.service and set "
+                                "\"ExecStart=/usr/lib/bluetooth/bluetoothd -E -C\", then restart the system. (If "
+                                "\"ExecStart\" is not existed, please insert it into [Service])")
+
+            elif advertise_retry_count >= 10:
+                raise Exception("Too many advertise retry! Module stop!")
+            log("Wait For Restart...")
+            advertise_retry_count += 1
             time.sleep(1)
+            continue
