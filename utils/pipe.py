@@ -20,7 +20,7 @@ class Subscriber:
     def __init__(
             self,
             flag: str = "",
-            handler: Callable[[Event, any], None] = lambda _: None,
+            handler: Callable[[Event, any], None] = lambda _, __: None,
             receive_all: bool = False
     ):
         self.receive_all = receive_all
@@ -48,7 +48,7 @@ class Pipe:
         self.subscribers.append(subscriber)
         return True
 
-    def on(self, flag: str, handler: Callable[[Event, any], None]) -> Subscriber:
+    def on(self, flag: str, handler: Callable[[Event, Pipe], None]) -> Subscriber:
         subscriber = Subscriber(flag, handler)
         self.subscribers.append(subscriber)
         return subscriber
