@@ -32,15 +32,27 @@ class Pipe:
     def __init__(self, maxsize=1000):
         self.msgQueue = Queue(maxsize=maxsize)
         self.subscribers: list[Subscriber] = []
+        self.lock = threading.Lock()
+        self.lock.acquire()
 
     def hold(self) -> None:
         while True:
             notification: Event = self.msgQueue.get()
-            for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
-                threading.Thread(target=lambda: subscriber.notify(notification, self)).start()
+            if notification.flag == "__DISPATCHER_MAIN__":
+                fun = notification.data.get("function")
+                if fun is not None:
+                    fun()
+                self.lock.release()
+            else:
+                for subscriber in [s for s in self.subscribers if (s.receive_all or s.flag == notification.flag)]:
+                    threading.Thread(target=lambda: subscriber.notify(notification, self)).start()
 
     def send(self, flag: str, msg: dict | None = None) -> None:
         self.msgQueue.put(Event(flag, msg))
+
+    def run_on_main_thread(self, function: Callable[[], None]):
+        self.send("__DISPATCHER_MAIN__", {"function": function})
+        self.lock.acquire()
 
     def subscribe(self, subscriber: Subscriber) -> bool:
         if subscriber in self.subscribers:
