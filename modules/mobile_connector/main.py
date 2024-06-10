@@ -47,6 +47,8 @@ def main(pipe: Pipe):
     for cmd in init_cmds:
         log(f"Output of System Command \"{cmd}\":", run_sys_cmd(cmd))
 
+    advertise_retry_count = 0
+
     while True:
         server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 
@@ -64,9 +66,15 @@ def main(pipe: Pipe):
                 service_classes=[service_uuid, bluetooth.SERIAL_PORT_CLASS],
                 profiles=[bluetooth.SERIAL_PORT_PROFILE]
             )
+            advertise_retry_count = 0
         except Exception as e:
             log("Advertise Failed! Exception Track:", e)
+
+            if advertise_retry_count >= 10:
+                raise Exception("Too many advertise retry! Module stop!")
+
             log("STOP! Wait For Restart...")
+            advertise_retry_count += 1
             time.sleep(1)
             continue
 
