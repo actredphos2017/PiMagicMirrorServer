@@ -5,7 +5,8 @@ import json
 from typing import Callable
 
 import utils.websocket_server as websocket_server
-from pipe import Pipe, Notification, Event
+from utils.define_module import define_module
+from utils.pipe import Pipe, Notification, Event
 
 notifyPipe: Pipe
 log: Callable
@@ -43,6 +44,7 @@ def handle_send(event: Event, _):
         log("Websocket SEND X> EXCEPTIONALLY", json.dumps(event.data))
 
 
+@define_module("MESSANGER")
 def main(pipe: Pipe):
     init_module(pipe)
     log('START!')

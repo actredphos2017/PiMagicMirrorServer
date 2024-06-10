@@ -1,8 +1,8 @@
 import json
 
 from modules.messanger.main import external_event
-from orm import Session, UserInfo, LocalStorage
-from pipe import Event, Pipe
+from utils.orm import Session, UserInfo, LocalStorage
+from utils.pipe import Event, Pipe
 
 
 def handle_user_enter(event: Event, pipe: Pipe):

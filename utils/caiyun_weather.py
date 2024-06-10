@@ -6,7 +6,7 @@ import json
 import requests
 
 from api_key_loader import CAIYUN_API_TOKEN, CURRENT_LONGITUDE, CURRENT_LATITUDE
-from orm import LocalStorage
+from utils.orm import LocalStorage
 
 
 def get_comprehensive_url(token: str, longitude, latitude):

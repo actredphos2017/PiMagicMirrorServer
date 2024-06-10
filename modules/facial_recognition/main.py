@@ -4,7 +4,8 @@ import random
 import time
 from typing import Callable
 
-from pipe import Pipe, Notification
+from utils.define_module import define_module
+from utils.pipe import Pipe, Notification
 
 notifyPipe: Pipe
 log: Callable
@@ -34,6 +35,7 @@ def demo():
     notifyPipe.send("ENVIRONMENT_SILENT")
 
 
+@define_module("FACIAL")
 def main(pipe: Pipe):
     init_module(pipe)
     log('START!')

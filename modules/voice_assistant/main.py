@@ -12,8 +12,9 @@ import requests
 from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
+from utils.define_module import define_module
 from modules.voice_assistant import snowboydecoder
-from pipe import Pipe, Notification
+from utils.pipe import Pipe, Notification
 from utils.caiyun_weather import get_weather
 from utils.eylink_gpt import chat
 
@@ -287,6 +288,7 @@ def detected_callback():
     wait_for_close_assistant()
 
 
+@define_module("ASSISTANT")
 def main(pipe: Pipe):
     init_module(pipe)
     log('START!')

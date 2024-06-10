@@ -1,33 +1,31 @@
 import threading
 
-from modules.facial_recognition.main import main as facial_recognition
-from modules.master.main import main as manager
-from modules.messanger.main import main as messanger
-from modules.voice_assistant.main import main as voice_assistant
-from modules.mobile_connector.main import main as mobile_connector
-from pipe import Pipe, Event
-
-registered_modules = [
-    messanger,
-    manager,
-    voice_assistant,
-    facial_recognition,
-    mobile_connector,
-]
-
-
-def logger(n: Event, _):
-    print(
-        n.stamp.strftime("%Y-%m-%d %H:%M:%S"),
-        n.data['sender'],
-        n.data['msg'],
-        sep='\t'
-    )
-
+from registered_modules import module_list
+from utils.pipe import Pipe, Event, Notification
 
 if __name__ == '__main__':
     pipe = Pipe()
+
+
+    def logger(n: Event, _):
+        print(
+            n.stamp.strftime("%Y-%m-%d %H:%M:%S"),
+            n.data['sender'],
+            n.data['msg'],
+            sep='\t'
+        )
+
+
     pipe.on("LOG", logger)
-    for module in registered_modules:
-        threading.Thread(target=lambda: module(pipe)).start()
+    main_logger = Notification.create_notifier(pipe, "MAIN")
+
+    for module in module_list:
+        def run_module():
+            try:
+                module.main_function(pipe)
+            except Exception as e:
+                main_logger(f"Module {module.name} MEET ERROR: {e}")
+
+
+        threading.Thread(target=run_module).start()
     pipe.hold()

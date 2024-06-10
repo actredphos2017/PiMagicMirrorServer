@@ -7,8 +7,9 @@ from typing import Callable
 
 import bluetooth
 
+from utils.define_module import define_module
 from modules.mobile_connector.bluetooth_socket_wrapper import BluetoothSocketWrapper
-from pipe import Pipe, Notification
+from utils.pipe import Pipe, Notification
 
 notifyPipe: Pipe
 log: Callable
@@ -29,6 +30,7 @@ def handle_accept(client_socket: bluetooth.BluetoothSocket, address):
     handler.hold()
 
 
+@define_module("MOBILE")
 def main(pipe: Pipe):
     global notifyPipe, log
     notifyPipe = pipe
