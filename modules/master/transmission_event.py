@@ -1,7 +1,7 @@
 import json
 
 from modules.messanger.main import external_event
-from utils.orm import Session, UserInfo, LocalStorage
+from utils.orm import Session, UserInfo, LocalStorage, RuntimeCache
 from utils.pipe import Event, Pipe
 
 
@@ -11,7 +11,7 @@ def transfer_only(event: Event, pipe: Pipe):
 
 def handle_user_leave(event: Event, pipe: Pipe):
     LocalStorage.remove("AVAILABLE_FACE_ID")
-    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+    transfer_only(event, pipe)
 
 
 def handle_user_enter(event: Event, pipe: Pipe):
@@ -37,12 +37,17 @@ def handle_external_event(event: Event, pipe: Pipe):
 
 def handle_environment_active(event: Event, pipe: Pipe):
     LocalStorage.set("environment", "active")
-    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+    transfer_only(event, pipe)
 
 
 def handle_environment_silent(event: Event, pipe: Pipe):
     LocalStorage.set("environment", "silent")
-    pipe.send("EXTERNAL_SEND", external_event(event.flag, event.data))
+    transfer_only(event, pipe)
+
+
+def handle_bluetooth_advertise_open(event: Event, pipe: Pipe):
+    RuntimeCache.set("bluetooth_advertise_info", json.dumps(event.data))
+    pipe.send("BLUETOOTH_ADVERTISE_INFO", event.data)
 
 
 def init_transmission_event_handler(pipe: Pipe):
@@ -60,6 +65,9 @@ def init_transmission_event_handler(pipe: Pipe):
     pipe.on("ASSISTANT_CLOSE", transfer_only)
 
     pipe.on("WEATHER_UPDATE", transfer_only)
+
+    pipe.on("BLUETOOTH_ADVERTISE_OPEN", handle_bluetooth_advertise_open)
+    pipe.on("BLUETOOTH_ADVERTISE_INFO", transfer_only)
 
     # RECEIVE
     pipe.on("EXTERNAL_RECEIVE", handle_external_event)

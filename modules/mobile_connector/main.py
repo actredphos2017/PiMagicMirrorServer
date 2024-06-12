@@ -69,6 +69,11 @@ def main(pipe: Pipe):
 
             log("OPEN Bluetooth Advertise Service!")
             log(f"Local Address: {addr} Port: {port} Service UUID: {service_uuid}")
+            notifyPipe.send("BLUETOOTH_ADVERTISE_OPEN", {
+                "addr": addr,
+                "port": port,
+                "uuid": service_uuid,
+            })
 
             while True:
                 client_sock, address = server_sock.accept()
