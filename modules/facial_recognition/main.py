@@ -119,7 +119,7 @@ def train_face_recognizer(input_dir, output_file):
 
 # 判断脸是否存在
 def detect_exist(cap, recognizers, face_cascade):
-    global changeCount, nowName
+    global changeCount, nowName,missTime
     flag = False
     ret, frame = cap.read()
     if not ret:
@@ -147,7 +147,9 @@ def detect_exist(cap, recognizers, face_cascade):
         if min_confidence > 49:
             flag = False
             name = "Unknown"
-
+        log(nowName)
+        if name == nowName and name != "Unknown":
+            changeCount = 0
         if name != "Unknown" and name != nowName:
             changeCount += 1
             if changeCount >= 5:
@@ -161,9 +163,34 @@ def detect_exist(cap, recognizers, face_cascade):
 
     return flag
 
+# 检测是否有人脸
+def detect_face(cap, face_cascade):
+    ret, frame = cap.read()
+    if not ret:
+        return False
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5)
+    return len(faces) > 0
+
+# 检测环境变化
+def detect_environment_change(cap, prev_frame):
+    ret, frame = cap.read()
+    if not ret:
+        return False, None
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if prev_frame is None:
+        return False, gray
+    diff = cv2.absdiff(prev_frame, gray)
+    _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+    change = np.sum(thresh) / 255
+    if change > 5000:
+        return True, gray
+    return False, gray
+
 
 # 函数：实时检测与识别
 def detect_and_recognize(cap, model_files):
+    global missTime,nowName
     count = 0
     last_check_time = time.time()
     # 创建人脸检测器
@@ -175,15 +202,24 @@ def detect_and_recognize(cap, model_files):
         recognizer = cv2.face.LBPHFaceRecognizer_create()
         recognizer.read(model_file)
         recognizers.append((recognizer, model_file[:-4]))
-
+    prev_frame = None
     # 进行实时检测与识别
     while True:
         current_time = time.time()
         if current_time - last_check_time >= 0.5:
             last_check_time = current_time
-            if detect_exist(cap, recognizers, face_cascade):
+            environment_changed, prev_frame = detect_environment_change(cap, prev_frame)
+            if not detect_face(cap, face_cascade):
+                missTime += 1
+            if environment_changed and missTime >= 20 :
+                nowName = "Unknown"
+                missTime = 0
+                notifyPipe.send("ENVIRONMENT_ACTIVE")
+                log("Environment Active")
+            if detect_exist(cap, recognizers, face_cascade) :
                 count = 0
-            else:
+                missTime = 0
+            elif not detect_exist(cap, recognizers, face_cascade) and detect_face(cap,face_cascade):
                 count += 1
             if count >= 10:
                 log("New Face Enter")
@@ -216,8 +252,7 @@ cap: cv2.VideoCapture
 yml_files: list[str]
 nowName = "Unknown"
 changeCount = 0
-
-
+missTime = 0
 @define_module("FACIAL")
 def main(pipe: Pipe):
     init_module(pipe)
