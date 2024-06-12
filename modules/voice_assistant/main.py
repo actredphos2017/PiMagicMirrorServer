@@ -240,7 +240,7 @@ def recognize() -> int:
 def judge(content) -> int:
     global statement,method
     try:
-        if content is None or content=="我不知道。":
+        if content is None or content=="我不知道。" or content=="不知道。":
             return output()
         elif is_weather_query(content):
             log("weather")
@@ -291,40 +291,46 @@ def judge(content) -> int:
 
 def state_judge(content) -> int:
     global statement, method
-    string=""
+    string = ""
     relevant = extract_about_content(content)
     if not relevant:
         return output()
+
     if statement == "note":
         if method == "create":
             get_userdata("test").note.notes.append(CustomSingleNote(relevant))
-            string="成功添加关于"+relevant+"的记事"
-        if method == "delete":
+            string = "成功添加关于" + relevant + "的记事"
+        elif method == "delete":
             def comp(e: CustomSingleNote) -> bool:
                 return relevant in e.content
 
-            if comp:
+            notes_list = get_userdata("test").note.notes
+            notes_to_delete = [e for e in notes_list if comp(e)]
+            if not notes_to_delete:
                 return output("未找到对应记事")
-            for e in filter(comp, get_userdata("test").note.notes):
-                get_userdata("test").note.notes.remove(e)
+            for e in notes_to_delete:
+                notes_list.remove(e)
             string = "成功删除关于" + relevant + "的记事"
+
     elif statement == "date":
         if method == "create":
             get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule(relevant))
             string = "成功添加关于" + relevant + "的日程"
-        if method == "delete":
+        elif method == "delete":
             def comp(e: CustomSingleSchedule) -> bool:
                 return relevant in e.content
 
-            if comp:
+            schedules_list = get_userdata("test").schedule_list.schedules
+            schedules_to_delete = [e for e in schedules_list if comp(e)]
+            if not schedules_to_delete:
                 return output("未找到对应日程")
-            for e in filter(comp, get_userdata("test").note.notes):
-                get_userdata("test").schedule_list.schedules.remove(e)
+            for e in schedules_to_delete:
+                schedules_list.remove(e)
             string = "成功删除关于" + relevant + "的日程"
 
     statement = ""
     method = ""
-    return output("操作成功,"+string)
+    return output("操作成功," + string)
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
