@@ -15,7 +15,7 @@ def handle_user_leave(event: Event, pipe: Pipe):
 
 
 def handle_user_enter(event: Event, pipe: Pipe):
-    faceid = event.data['faceid']
+    faceid = event.data['face_id']
     with Session() as session:
         user: UserInfo = session.query(UserInfo).get(faceid)
         while user is None:
