@@ -250,7 +250,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     log("output:", TEXT)
     if hints is None:
         hints = []
-    if TEXT is None:
+    if TEXT is None or TEXT == "":
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
