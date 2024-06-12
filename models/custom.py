@@ -98,13 +98,15 @@ class CustomNote:
 
 
 class CustomSingleSchedule:
-    def __init__(self, name: str, date: datetime = datetime.now()):
+    def __init__(self, name: str, content: str = "", date: datetime = datetime.now()):
         self.name = name
         self.date = date
+        self.content = content
 
     def __dict__(self):
         return {
             "name": self.name,
+            "content": self.content,
             "date": int(self.date.timestamp() * 1000)
         }
 
@@ -112,6 +114,7 @@ class CustomSingleSchedule:
     def from_dict(schedule: dict):
         return CustomSingleSchedule(
             name=schedule["name"],
+            content=schedule["content"],
             date=datetime.fromtimestamp(schedule["date"] / 1000),
         )
 
