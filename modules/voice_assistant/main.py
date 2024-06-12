@@ -14,7 +14,7 @@ from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from models.custom import *
 from modules.voice_assistant import snowboydecoder
 from utils.caiyun_weather import get_weather
-from utils.database_utils import get_face_id, get_userdata
+from utils.database_utils import get_face_id, get_userdata, set_userdata
 from utils.define_module import define_module
 from utils.eylink_gpt import chat
 from utils.pipe import Pipe, Notification
@@ -299,40 +299,50 @@ def state_judge(content) -> int:
     if statement == "note":
         if method == "create":
             log("note create")
-            get_userdata("test")["note"]["notes"].append(single_note(relevant))
+            userdata = get_userdata("test")
+            userdata["note"]["notes"].append(single_note(relevant))
+            set_userdata("test", userdata)
             string = "成功添加关于" + relevant + "的记事"
         elif method == "delete":
+            log(json.dumps(get_userdata("test")["note"]["notes"]))
             log("note delete")
 
             def comp(e: dict) -> bool:
                 return relevant in e["content"]
 
-            notes_list = get_userdata("test")["note"]["notes"]
+            userdata = get_userdata("test")
+            notes_list = userdata["note"]["notes"]
             notes_to_delete = [e for e in notes_list if comp(e)]
             if not notes_to_delete:
                 return output("未找到对应记事")
             for e in notes_to_delete:
                 notes_list.remove(e)
+            set_userdata("test", userdata)
             string = "成功删除关于" + relevant + "的记事"
 
     elif statement == "date":
         if method == "create":
             log("date create")
-            get_userdata("test")["schedule_list"]["schedules"].append(single_schedule(relevant))
+            userdata = get_userdata("test")
+            userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
+            set_userdata("test", userdata)
             string = "成功添加关于" + relevant + "的日程"
         elif method == "delete":
+            log(json.dumps(get_userdata("test")["schedule_list"]["schedules"]))
             log("date delete")
 
             def comp(e: dict) -> bool:
                 log("Hello", type(e))
-                return relevant in e["content"]
+                return relevant in e["content"] or relevant in e["name"]
 
-            schedules_list = get_userdata("test")["schedule_list"]["schedules"]
+            userdata = get_userdata("test")
+            schedules_list = userdata["schedule_list"]["schedules"]
             schedules_to_delete = [e for e in schedules_list if comp(e)]
             if not schedules_to_delete:
                 return output("未找到对应日程")
             for e in schedules_to_delete:
                 schedules_list.remove(e)
+            set_userdata("test", userdata)
             string = "成功删除关于" + relevant + "的日程"
 
     statement = ""
