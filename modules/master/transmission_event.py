@@ -10,7 +10,7 @@ def transfer_only(event: Event, pipe: Pipe):
 
 
 def handle_user_leave(event: Event, pipe: Pipe):
-    LocalStorage.remove("AVAILABLE_FACE_ID")
+    RuntimeCache.remove("AVAILABLE_FACE_ID")
     transfer_only(event, pipe)
 
 
@@ -22,7 +22,7 @@ def handle_user_enter(event: Event, pipe: Pipe):
             session.add(UserInfo(faceid=faceid))
             session.commit()
             user = session.query(UserInfo).get(faceid)
-        LocalStorage.set("AVAILABLE_FACE_ID", faceid)
+        RuntimeCache.set("AVAILABLE_FACE_ID", faceid)
         pipe.send("EXTERNAL_SEND", external_event("FACE_ENTER", {
             "faceid": faceid,
             "setting": json.loads(user.setting),
