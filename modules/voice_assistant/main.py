@@ -12,7 +12,8 @@ import requests
 from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
-from utils.database_utils import get_face_id
+from models.custom import CustomSingleNote
+from utils.database_utils import get_face_id, get_userdata
 from utils.define_module import define_module
 from modules.voice_assistant import snowboydecoder
 from utils.pipe import Pipe, Notification
@@ -226,9 +227,10 @@ def recognize() -> int:
                 answer = f"当前天气{description}，气温{temp}度，湿度{int(humidity)}%，风速是{wind_speed}米每秒。{forcast}"
             else:
                 answer = "获取天气信息失败。"
-        elif is_date_query(content):
+        elif is_note_query(content):
             face_id=get_face_id()
-            #if is_create_query(content):
+            if is_create_query(content):
+               output("你想创建关于什么的记事")
 
         elif is_note_query(content):
             face_id=get_face_id()
@@ -245,10 +247,10 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
         hints = []
     if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
-            "content": "Sorry.I don't get you.",
+            "content": "对不起，我没听清.",
             "hints": hints
         })
-        return 0
+        #return 0
     elif len(TEXT) >= 20:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": TEXT,
