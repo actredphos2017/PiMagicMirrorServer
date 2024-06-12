@@ -4,7 +4,7 @@ from utils.orm import *
 
 
 def get_face_id() -> str | None:
-    return LocalStorage.get("AVAILABLE_FACE_ID")
+    return RuntimeCache.get("AVAILABLE_FACE_ID")
 
 
 def get_userdata(faceid: str) -> dict | None:
