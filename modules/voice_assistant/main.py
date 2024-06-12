@@ -221,8 +221,10 @@ def recognize() -> int:
             'Content-Length': str(length)
         }
     ).json()
-    if result is None:
+    if 'result' not in result or not result['result']:
+        log("No result")
         return output()
+
     content = result['result'][0]
     log("Recognize Result:", content)
     notifyPipe.send("ASSISTANT_ASK", {
@@ -289,24 +291,27 @@ def judge(content) -> int:
 
 def state_judge(content) -> int:
     global statement, method
+    string=""
     relevant = extract_about_content(content)
     if not relevant:
         return output()
     if statement == "note":
         if method == "create":
             get_userdata("test").note.notes.append(CustomSingleNote(relevant))
+            string="成功添加关于"+relevant+"的记事"
         if method == "delete":
             def comp(e: CustomSingleNote) -> bool:
                 return relevant in e.content
 
             if comp:
-                return output("未找到对应笔记")
+                return output("未找到对应记事")
             for e in filter(comp, get_userdata("test").note.notes):
                 get_userdata("test").note.notes.remove(e)
-
+            string = "成功删除关于" + relevant + "的记事"
     elif statement == "date":
         if method == "create":
             get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule(relevant))
+            string = "成功添加关于" + relevant + "的日程"
         if method == "delete":
             def comp(e: CustomSingleSchedule) -> bool:
                 return relevant in e.content
@@ -315,10 +320,11 @@ def state_judge(content) -> int:
                 return output("未找到对应日程")
             for e in filter(comp, get_userdata("test").note.notes):
                 get_userdata("test").schedule_list.schedules.remove(e)
+            string = "成功删除关于" + relevant + "的日程"
 
     statement = ""
     method = ""
-    return output("操作成功")
+    return output("操作成功,"+string)
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
