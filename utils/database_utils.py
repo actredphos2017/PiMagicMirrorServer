@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from models.custom import CustomSingleNote, CustomSingleSchedule
 from utils.orm import *
 
 
@@ -43,3 +44,9 @@ def set_nickname(faceid: str, nickname: str):
             UserInfo.nickname: nickname
         })
         session.commit()
+
+
+if __name__ == "__main__":
+    get_userdata("test").note.notes.append(CustomSingleNote("aegsdf"))
+    get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule("aegsdf"))
+    
