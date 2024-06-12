@@ -52,7 +52,7 @@ class CustomComposeStructure:
 
 
 class CustomSingleNote:
-    def __init__(self, content: str, create_time: datetime):
+    def __init__(self, content: str, create_time: datetime = datetime.now()):
         self.content = content
         self.create_time = create_time
 
@@ -77,7 +77,7 @@ class CustomNote:
     def __dict__(self):
         return {
             "notes": [
-                note.__dict__() for note in self.notes
+                (note.__dict__() if not isinstance(note, dict) else note) for note in self.notes
             ],
         }
 
@@ -98,7 +98,7 @@ class CustomNote:
 
 
 class CustomSingleSchedule:
-    def __init__(self, name: str, date: datetime):
+    def __init__(self, name: str, date: datetime = datetime.now()):
         self.name = name
         self.date = date
 
@@ -132,7 +132,7 @@ class CustomScheduleList:
     def __dict__(self):
         return {
             "schedules": [
-                schedule.__dict__() for schedule in self.schedules
+                (schedule.__dict__() if not isinstance(schedule, dict) else schedule) for schedule in self.schedules
             ]
         }
 
