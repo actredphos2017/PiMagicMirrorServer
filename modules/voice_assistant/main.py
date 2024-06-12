@@ -9,16 +9,15 @@ from urllib import request, parse
 import numpy as np
 import pyaudio
 import requests
-from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
-from models.custom import CustomSingleNote, CustomSingleSchedule
+from models.custom import *
+from modules.voice_assistant import snowboydecoder
+from utils.caiyun_weather import get_weather
 from utils.database_utils import get_face_id, get_userdata
 from utils.define_module import define_module
-from modules.voice_assistant import snowboydecoder
-from utils.pipe import Pipe, Notification
-from utils.caiyun_weather import get_weather
 from utils.eylink_gpt import chat
+from utils.pipe import Pipe, Notification
 
 notifyPipe: Pipe
 log: Callable
@@ -193,7 +192,7 @@ def extract_about_content(content: str) -> str:
 
 
 def recognize() -> int:
-    global statement,method
+    global statement, method
     token = get_token()
     # 2、打开需要识别的语音文件
     speech_data = []
@@ -235,12 +234,13 @@ def recognize() -> int:
     if statement == "":
         return judge(content)
     else:
-        return state_judge(content) 
-    
+        return state_judge(content)
+
+
 def judge(content) -> int:
-    global statement,method
+    global statement, method
     try:
-        if content is None or content=="我不知道。" or content=="不知道。":
+        if content is None or content == "我不知道。" or content == "不知道。":
             return output()
         elif is_weather_query(content):
             log("weather")
@@ -299,14 +299,15 @@ def state_judge(content) -> int:
     if statement == "note":
         if method == "create":
             log("note create")
-            get_userdata("test").note.notes.append(CustomSingleNote(relevant))
+            get_userdata("test")["note"]["notes"].append(single_note(relevant))
             string = "成功添加关于" + relevant + "的记事"
         elif method == "delete":
             log("note delete")
-            def comp(e: CustomSingleNote) -> bool:
-                return relevant in e.content
 
-            notes_list = get_userdata("test").note.notes
+            def comp(e: dict) -> bool:
+                return relevant in e["content"]
+
+            notes_list = get_userdata("test")["note"]["notes"]
             notes_to_delete = [e for e in notes_list if comp(e)]
             if not notes_to_delete:
                 return output("未找到对应记事")
@@ -317,14 +318,16 @@ def state_judge(content) -> int:
     elif statement == "date":
         if method == "create":
             log("date create")
-            get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule(relevant))
+            get_userdata("test")["schedule_list"]["schedules"].append(single_schedule(relevant))
             string = "成功添加关于" + relevant + "的日程"
         elif method == "delete":
             log("date delete")
-            def comp(e: CustomSingleSchedule) -> bool:
+
+            def comp(e: dict) -> bool:
                 log("Hello", type(e))
-                return relevant in e.content
-            schedules_list = get_userdata("test").schedule_list.schedules
+                return relevant in e["content"]
+
+            schedules_list = get_userdata("test")["schedule_list"]["schedules"]
             schedules_to_delete = [e for e in schedules_list if comp(e)]
             if not schedules_to_delete:
                 return output("未找到对应日程")
@@ -420,7 +423,7 @@ def interrupt_close_assistant():
 
 
 def detected_callback():
-    global statement,method
+    global statement, method
     interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
