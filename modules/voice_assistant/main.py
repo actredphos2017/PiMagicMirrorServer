@@ -12,7 +12,7 @@ import requests
 from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
-from models.custom import CustomSingleNote
+from models.custom import CustomSingleNote, CustomSingleSchedule
 from utils.database_utils import get_face_id, get_userdata
 from utils.define_module import define_module
 from modules.voice_assistant import snowboydecoder
@@ -49,8 +49,9 @@ weather_map = {
     "WIND": "大风"
 }
 
-statement=""
-method=""
+statement = ""
+method = ""
+
 
 def interrupt_callback():
     global interrupted
@@ -177,9 +178,19 @@ def is_change_query(content: str) -> bool:
     change_keywords = ["修改", "更改", "变更", "调整"]
     return any(keyword in content for keyword in change_keywords)
 
-def is_about_query(content: str) -> bool:
-    change_keywords = ["修改", "更改", "变更", "调整"]
-    return any(keyword in content for keyword in change_keywords)
+
+def extract_about_content(content: str) -> str:
+    about_index = content.find("关于")
+    de_index = content.find("的")
+
+    if about_index != -1:
+        if de_index != -1 and de_index > about_index:
+            return content[about_index + 2:de_index].strip()
+        else:
+            return content[about_index + 2:].strip()
+    else:
+        return content
+
 
 def recognize() -> int:
     token = get_token()
@@ -215,12 +226,12 @@ def recognize() -> int:
         "content": content,
         "end": True
     })
-    if statement=="":
+    if statement == "":
         return judge(content)
     else:
         return state_judge(content)
 
-    
+
 def judge(content) -> int:
     try:
         if content is None:
@@ -240,30 +251,32 @@ def judge(content) -> int:
 
         elif is_note_query(content):
             log("note")
+            statement = "note"
             notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
             if is_create_query(content):
                 output("你想创建关于什么的记事")
-                method="create"
+                method = "create"
             elif is_delete_query(content):
                 output("你想删除关于什么的记事")
-                method="create"
+                method = "create"
             elif is_change_query(content):
                 output("你想修改关于什么的记事")
             else:
                 output()
         elif is_date_query(content):
             log("note")
+            statement = "date"
             notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
             if is_create_query(content):
                 output("你想创建关于什么的记事")
-                method="create"
+                method = "create"
             elif is_delete_query(content):
                 output("你想删除关于什么的记事")
-                method="create"
+                method = "create"
             elif is_change_query(content):
-                output("你想修改关于什么的记事")  
+                output("你想修改关于什么的记事")
             else:
                 output()
         else:
@@ -275,9 +288,41 @@ def judge(content) -> int:
         log("except")
         return output("未识别到人脸，请直视摄像头")
 
-def state_judge(content)->int:
-        
-    
+
+def state_judge(content) -> int:
+    global statement, method
+    relevant = extract_about_content(content)
+    if not relevant:
+        return output()
+    if statement == "note":
+        if method == "create":
+            get_userdata("test").note.notes.append(CustomSingleNote(relevant))
+        if method == "delete":
+            def comp(e: CustomSingleNote) -> bool:
+                return relevant in e.content
+
+            if comp:
+                return output("未找到对应笔记")
+            for e in filter(comp, get_userdata("test").note.notes):
+                get_userdata("test").note.notes.remove(e)
+
+    elif statement == "date":
+        if method == "create":
+            get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule(relevant))
+        if method == "delete":
+            def comp(e: CustomSingleSchedule) -> bool:
+                return relevant in e.content
+
+            if comp:
+                return output("未找到对应日程")
+            for e in filter(comp, get_userdata("test").note.notes):
+                get_userdata("test").schedule_list.schedules.remove(e)
+
+    statement = ""
+    method = ""
+    return output("操作成功")
+
+
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     log("output:", TEXT)
     if hints is None:
@@ -293,7 +338,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
             "content": TEXT,
             "hints": hints
         })
-        return 1  
+        return 1
     token = get_token()
     tex = parse.quote_plus(TEXT)
     params = {'tok': token,  # 开放平台获取到的开发者access_token
@@ -364,10 +409,10 @@ def detected_callback():
     interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
-    result=1
-    statement=""
-    method=""
-    while result!=0:
+    result = 1
+    statement = ""
+    method = ""
+    while result != 0:
         record(stream)
         result = recognize()
         if result == 0:
