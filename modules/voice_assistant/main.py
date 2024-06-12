@@ -100,13 +100,15 @@ def record(stream: pyaudio.Stream):
             time.sleep(check_interval)
             if audio_data is not None:
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
-            if  np.mean(calculate_volume(audio_data)) < 50 :
-                silent_time += check_interval
-                if silent_time >= silence_threshold:
-                    flag = False  # 停止录音的标志
-                    break
+                if np.mean(calculate_volume(audio_data)) < 50 :
+                    silent_time += check_interval
+                    if silent_time >= silence_threshold:
+                        flag = False  # 停止录音的标志
+                        break
+                else:
+                    silent_time=0
             else:
-                silent_time = 0
+                silent_time += check_interval
 
     threading.Thread(target=check_volume).start()
     for _ in tqdm(range(8 * 5)):
