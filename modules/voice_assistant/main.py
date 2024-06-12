@@ -193,6 +193,7 @@ def extract_about_content(content: str) -> str:
 
 
 def recognize() -> int:
+    global statement,method
     token = get_token()
     # 2、打开需要识别的语音文件
     speech_data = []
@@ -220,21 +221,24 @@ def recognize() -> int:
             'Content-Length': str(length)
         }
     ).json()
+    if result is None:
+        return output()
     content = result['result'][0]
     log("Recognize Result:", content)
     notifyPipe.send("ASSISTANT_ASK", {
+
         "content": content,
         "end": True
     })
     if statement == "":
         return judge(content)
     else:
-        return state_judge(content)
-
-
+        return state_judge(content) 
+    
 def judge(content) -> int:
+    global statement,method
     try:
-        if content is None:
+        if content is None or content=="我不知道。":
             return output()
         elif is_weather_query(content):
             log("weather")
@@ -252,40 +256,34 @@ def judge(content) -> int:
         elif is_note_query(content):
             log("note")
             statement = "note"
-            notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
             if is_create_query(content):
-                output("你想创建关于什么的记事")
                 method = "create"
+                return output("你想创建关于什么的记事")
             elif is_delete_query(content):
-                output("你想删除关于什么的记事")
-                method = "create"
-            elif is_change_query(content):
-                output("你想修改关于什么的记事")
+                method = "delete"
+                return output("你想删除关于什么的记事")
             else:
-                output()
+                return output()
         elif is_date_query(content):
-            log("note")
+            log("date")
             statement = "date"
-            notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
             if is_create_query(content):
-                output("你想创建关于什么的记事")
                 method = "create"
+                return output("你想创建关于什么的记事")
             elif is_delete_query(content):
-                output("你想删除关于什么的记事")
-                method = "create"
-            elif is_change_query(content):
-                output("你想修改关于什么的记事")
+                method = "delete"
+                return output("你想删除关于什么的记事")
             else:
-                output()
+                return output()
         else:
             log("chat")
             answer = chat(content)
         log("answer", answer)
         return output(answer)
-    except:
-        log("except")
+    except Exception as e:
+        log("except", e)
         return output("未识别到人脸，请直视摄像头")
 
 
@@ -327,7 +325,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     log("output:", TEXT)
     if hints is None:
         hints = []
-    if TEXT is None or TEXT == "我不知道。":
+    if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
@@ -406,6 +404,7 @@ def interrupt_close_assistant():
 
 
 def detected_callback():
+    global statement,method
     interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
@@ -429,6 +428,7 @@ def detected_callback():
 @define_module("ASSISTANT")
 def main(pipe: Pipe):
     init_module(pipe)
+    notifyPipe.send("FACE_ENTER", {"face_id": "test"})
     log('START!')
     while True:
         log("Start Listen!")
