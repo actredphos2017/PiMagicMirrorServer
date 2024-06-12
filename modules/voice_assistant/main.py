@@ -93,7 +93,7 @@ def record(stream: pyaudio.Stream):
     flag= True
     audio_data: bytes | None = None
     check_interval =0.1
-    silence_threshold =1
+    silence_threshold =2
     def check_volume():
         nonlocal flag, audio_data
         silent_time = 0
@@ -206,7 +206,6 @@ def recognize() -> int:
             'Content-Length': str(length)
         }
     ).json()
-    print(result)
     try:
         content = result['result'][0]
         log("Recognize Result:", content)
@@ -215,8 +214,10 @@ def recognize() -> int:
             "content": content,
             "end": True
         })
-
-        if is_weather_query(content):
+        if content is None:
+            return()
+        elif is_weather_query(content):
+            log("weather")
             weather_info = get_weather()
             if isinstance(weather_info, dict):
                 description = weather_map[weather_info['result']['realtime']['skycon']]
@@ -227,30 +228,36 @@ def recognize() -> int:
                 answer = f"当前天气{description}，气温{temp}度，湿度{int(humidity)}%，风速是{wind_speed}米每秒。{forcast}"
             else:
                 answer = "获取天气信息失败。"
+
         elif is_note_query(content):
+            log("note")
             face_id=get_face_id()
             if is_create_query(content):
                output("你想创建关于什么的记事")
 
-        elif is_note_query(content):
+        elif is_date_query(content):
+            log("note")
             face_id=get_face_id()
-
         else:
+            log("chat")
             answer = chat(content)
+        log("answer",answer)
         return output(answer)
     except:
-        return output()
+        log("except")
+        return output("")
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
+    log("output:",TEXT)
     if hints is None:
         hints = []
-    if TEXT is None:
+    if TEXT is None :
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
         })
-        #return 0
+        return 0
     elif len(TEXT) >= 20:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": TEXT,
