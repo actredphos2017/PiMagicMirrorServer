@@ -7,7 +7,7 @@ def get_face_id() -> str | None:
     return LocalStorage.get("AVAILABLE_FACE_ID")
 
 
-def get_settings(faceid: str):
+def get_userdata(faceid: str):
     with Session() as session:
         target_column = session.query(UserInfo).filter_by(faceid=faceid)
         if target_column.count() == 0:
@@ -15,7 +15,7 @@ def get_settings(faceid: str):
         return CustomSetting.from_dict(json.loads(target_column.one().setting))
 
 
-def set_settings(faceid: str, setting: CustomSetting):
+def set_userdata(faceid: str, setting: CustomSetting):
     with Session() as session:
         target_column = session.query(UserInfo).filter_by(faceid=faceid)
         if target_column.count() == 0:
