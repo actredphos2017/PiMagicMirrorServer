@@ -9,16 +9,15 @@ from urllib import request, parse
 import numpy as np
 import pyaudio
 import requests
-from tqdm import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
-from models.custom import CustomSingleNote
-from utils.database_utils import get_face_id, get_userdata
-from utils.define_module import define_module
+from models.custom import *
 from modules.voice_assistant import snowboydecoder
-from utils.pipe import Pipe, Notification
 from utils.caiyun_weather import get_weather
+from utils.database_utils import get_face_id, get_userdata, set_userdata
+from utils.define_module import define_module
 from utils.eylink_gpt import chat
+from utils.pipe import Pipe, Notification
 
 notifyPipe: Pipe
 log: Callable
@@ -48,6 +47,9 @@ weather_map = {
     "SAND": "沙尘",
     "WIND": "大风"
 }
+
+statement = ""
+method = ""
 
 
 def interrupt_callback():
@@ -176,7 +178,21 @@ def is_change_query(content: str) -> bool:
     return any(keyword in content for keyword in change_keywords)
 
 
+def extract_about_content(content: str) -> str:
+    about_index = content.find("关于")
+    de_index = content.find("的")
+
+    if about_index != -1:
+        if de_index != -1 and de_index > about_index:
+            return content[about_index + 2:de_index].strip()
+        else:
+            return content[about_index + 2:].strip()
+    else:
+        return content
+
+
 def recognize() -> int:
+    global statement, method
     token = get_token()
     # 2、打开需要识别的语音文件
     speech_data = []
@@ -204,15 +220,27 @@ def recognize() -> int:
             'Content-Length': str(length)
         }
     ).json()
-    try:
-        content = result['result'][0]
-        log("Recognize Result:", content)
+    if 'result' not in result or not result['result']:
+        log("No result")
+        return output()
 
-        notifyPipe.send("ASSISTANT_ASK", {
-            "content": content,
-            "end": True
-        })
-        if content is None:
+    content = result['result'][0]
+    log("Recognize Result:", content)
+    notifyPipe.send("ASSISTANT_ASK", {
+
+        "content": content,
+        "end": True
+    })
+    if statement == "":
+        return judge(content)
+    else:
+        return state_judge(content)
+
+
+def judge(content) -> int:
+    global statement, method
+    try:
+        if content is None or content == "我不知道。" or content == "不知道。":
             return output()
         elif is_weather_query(content):
             log("weather")
@@ -229,21 +257,97 @@ def recognize() -> int:
 
         elif is_note_query(content):
             log("note")
+            statement = "note"
             face_id = get_face_id()
             if is_create_query(content):
-                output("你想创建关于什么的记事")
-
+                method = "create"
+                return output("你想创建关于什么的记事")
+            elif is_delete_query(content):
+                method = "delete"
+                return output("你想删除关于什么的记事")
+            else:
+                return output()
         elif is_date_query(content):
-            log("note")
+            log("date")
+            statement = "date"
             face_id = get_face_id()
+            if is_create_query(content):
+                method = "create"
+                return output("你想创建关于什么的日程")
+            elif is_delete_query(content):
+                method = "delete"
+                return output("你想删除关于什么的日程")
+            else:
+                return output()
         else:
             log("chat")
             answer = chat(content)
         log("answer", answer)
         return output(answer)
-    except:
-        log("except")
+    except Exception as e:
+        log("except", e)
         return output("未识别到人脸，请直视摄像头")
+
+
+def state_judge(content) -> int:
+    global statement, method
+    string = ""
+    relevant = extract_about_content(content)
+    if not relevant:
+        return output()
+
+    if statement == "note":
+        if method == "create":
+            log("note create")
+            userdata = get_userdata("test")
+            userdata["note"]["notes"].append(single_note(relevant))
+            set_userdata("test", userdata)
+            string = "成功添加关于" + relevant + "的记事"
+        elif method == "delete":
+            log(json.dumps(get_userdata("test")["note"]["notes"]))
+            log("note delete")
+
+            def comp(e: dict) -> bool:
+                return relevant in e["content"]
+
+            userdata = get_userdata("test")
+            notes_list = userdata["note"]["notes"]
+            notes_to_delete = [e for e in notes_list if comp(e)]
+            if not notes_to_delete:
+                return output("未找到对应记事")
+            for e in notes_to_delete:
+                notes_list.remove(e)
+            set_userdata("test", userdata)
+            string = "成功删除关于" + relevant + "的记事"
+
+    elif statement == "date":
+        if method == "create":
+            log("date create")
+            userdata = get_userdata("test")
+            userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
+            set_userdata("test", userdata)
+            string = "成功添加关于" + relevant + "的日程"
+        elif method == "delete":
+            log(json.dumps(get_userdata("test")["schedule_list"]["schedules"]))
+            log("date delete")
+
+            def comp(e: dict) -> bool:
+                log("Hello", type(e))
+                return relevant in e["content"] or relevant in e["name"]
+
+            userdata = get_userdata("test")
+            schedules_list = userdata["schedule_list"]["schedules"]
+            schedules_to_delete = [e for e in schedules_list if comp(e)]
+            if not schedules_to_delete:
+                return output("未找到对应日程")
+            for e in schedules_to_delete:
+                schedules_list.remove(e)
+            set_userdata("test", userdata)
+            string = "成功删除关于" + relevant + "的日程"
+
+    statement = ""
+    method = ""
+    return output("操作成功," + string)
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
@@ -266,7 +370,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     tex = parse.quote_plus(TEXT)
     params = {'tok': token,  # 开放平台获取到的开发者access_token
               'tex': tex,  # 合成的文本，使用UTF-8编码。小于2048个中文字或者英文数字
-              'per': 4,  # 发音人选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
+              'per': 0,  # 发音人选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
               'spd': 5,  # 语速，取值0-15，默认为5中语速
               'pit': 5,  # 音调，取值0-15，默认为5中语调
               'vol': 5,  # 音量，取值0-15，默认为5中音量
@@ -329,17 +433,22 @@ def interrupt_close_assistant():
 
 
 def detected_callback():
+    global statement, method
     interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
-    record(stream)
-    result = recognize()
-    if result == 2:
-        play_audio(stream, "result.wav")
-    elif result == 1:
-        play_audio(stream, "tooLong.wav")
-    else:
-        play_audio(stream, "error.wav")
+    result = 1
+    statement = ""
+    method = ""
+    while result != 0:
+        record(stream)
+        result = recognize()
+        if result == 0:
+            play_audio(stream, "error.wav")
+        elif result == 1:
+            play_audio(stream, "tooLong.wav")
+        else:
+            play_audio(stream, "result.wav")
     stream.stop_stream()
     stream.close()
     wait_for_close_assistant()
@@ -348,6 +457,7 @@ def detected_callback():
 @define_module("ASSISTANT")
 def main(pipe: Pipe):
     init_module(pipe)
+    notifyPipe.send("FACE_ENTER", {"face_id": "test"})
     log('START!')
     while True:
         log("Start Listen!")
