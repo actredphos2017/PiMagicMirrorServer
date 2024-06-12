@@ -273,10 +273,10 @@ def judge(content) -> int:
             face_id = get_face_id()
             if is_create_query(content):
                 method = "create"
-                return output("你想创建关于什么的记事")
+                return output("你想创建关于什么的日程")
             elif is_delete_query(content):
                 method = "delete"
-                return output("你想删除关于什么的记事")
+                return output("你想删除关于什么的日程")
             else:
                 return output()
         else:
@@ -298,9 +298,11 @@ def state_judge(content) -> int:
 
     if statement == "note":
         if method == "create":
+            log("note create")
             get_userdata("test").note.notes.append(CustomSingleNote(relevant))
             string = "成功添加关于" + relevant + "的记事"
         elif method == "delete":
+            log("note delete")
             def comp(e: CustomSingleNote) -> bool:
                 return relevant in e.content
 
@@ -314,12 +316,14 @@ def state_judge(content) -> int:
 
     elif statement == "date":
         if method == "create":
+            log("date create")
             get_userdata("test").schedule_list.schedules.append(CustomSingleSchedule(relevant))
             string = "成功添加关于" + relevant + "的日程"
         elif method == "delete":
+            log("date delete")
             def comp(e: CustomSingleSchedule) -> bool:
+                log("Hello", type(e))
                 return relevant in e.content
-
             schedules_list = get_userdata("test").schedule_list.schedules
             schedules_to_delete = [e for e in schedules_list if comp(e)]
             if not schedules_to_delete:
