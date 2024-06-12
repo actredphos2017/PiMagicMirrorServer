@@ -87,7 +87,7 @@ def main(pipe: Pipe):
                 raise Exception("System bluetooth is not open! Module stop!")
             elif str(e).startswith("[Errno 13]"):
                 raise Exception("Please run this program with 'sudo'!")
-            elif str(e).startswith("[Errno 111]"):
+            elif str(e).startswith("[Errno 111]") or str(e).startswith("[Errno 2]"):
                 raise Exception("Edit /lib/systemd/system/bluetooth.service and set "
                                 "\"ExecStart=/usr/lib/bluetooth/bluetoothd -E -C\", then restart the system. (If "
                                 "\"ExecStart\" is not existed, please insert it into [Service])")
