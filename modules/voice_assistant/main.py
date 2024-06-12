@@ -49,6 +49,8 @@ weather_map = {
     "WIND": "大风"
 }
 
+statement=""
+method=""
 
 def interrupt_callback():
     global interrupted
@@ -175,6 +177,9 @@ def is_change_query(content: str) -> bool:
     change_keywords = ["修改", "更改", "变更", "调整"]
     return any(keyword in content for keyword in change_keywords)
 
+def is_about_query(content: str) -> bool:
+    change_keywords = ["修改", "更改", "变更", "调整"]
+    return any(keyword in content for keyword in change_keywords)
 
 def recognize() -> int:
     token = get_token()
@@ -204,14 +209,20 @@ def recognize() -> int:
             'Content-Length': str(length)
         }
     ).json()
-    try:
-        content = result['result'][0]
-        log("Recognize Result:", content)
+    content = result['result'][0]
+    log("Recognize Result:", content)
+    notifyPipe.send("ASSISTANT_ASK", {
+        "content": content,
+        "end": True
+    })
+    if statement=="":
+        return judge(content)
+    else:
+        return state_judge(content)
 
-        notifyPipe.send("ASSISTANT_ASK", {
-            "content": content,
-            "end": True
-        })
+    
+def judge(content) -> int:
+    try:
         if content is None:
             return output()
         elif is_weather_query(content):
@@ -229,13 +240,32 @@ def recognize() -> int:
 
         elif is_note_query(content):
             log("note")
+            notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
             if is_create_query(content):
                 output("你想创建关于什么的记事")
-
+                method="create"
+            elif is_delete_query(content):
+                output("你想删除关于什么的记事")
+                method="create"
+            elif is_change_query(content):
+                output("你想修改关于什么的记事")
+            else:
+                output()
         elif is_date_query(content):
             log("note")
+            notifyPipe.send("FACE_ENTER", {"face_id": "test"})
             face_id = get_face_id()
+            if is_create_query(content):
+                output("你想创建关于什么的记事")
+                method="create"
+            elif is_delete_query(content):
+                output("你想删除关于什么的记事")
+                method="create"
+            elif is_change_query(content):
+                output("你想修改关于什么的记事")  
+            else:
+                output()
         else:
             log("chat")
             answer = chat(content)
@@ -245,12 +275,14 @@ def recognize() -> int:
         log("except")
         return output("未识别到人脸，请直视摄像头")
 
-
+def state_judge(content)->int:
+        
+    
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     log("output:", TEXT)
     if hints is None:
         hints = []
-    if TEXT is None or TEXT == "":
+    if TEXT is None or TEXT == "我不知道。":
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
@@ -261,12 +293,12 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
             "content": TEXT,
             "hints": hints
         })
-        return 1
+        return 1  
     token = get_token()
     tex = parse.quote_plus(TEXT)
     params = {'tok': token,  # 开放平台获取到的开发者access_token
               'tex': tex,  # 合成的文本，使用UTF-8编码。小于2048个中文字或者英文数字
-              'per': 4,  # 发音人选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
+              'per': 0,  # 发音人选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
               'spd': 5,  # 语速，取值0-15，默认为5中语速
               'pit': 5,  # 音调，取值0-15，默认为5中语调
               'vol': 5,  # 音量，取值0-15，默认为5中音量
@@ -332,14 +364,18 @@ def detected_callback():
     interrupt_close_assistant()
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, output=True, frames_per_buffer=2048)
-    record(stream)
-    result = recognize()
-    if result == 2:
-        play_audio(stream, "result.wav")
-    elif result == 1:
-        play_audio(stream, "tooLong.wav")
-    else:
-        play_audio(stream, "error.wav")
+    result=1
+    statement=""
+    method=""
+    while result!=0:
+        record(stream)
+        result = recognize()
+        if result == 0:
+            play_audio(stream, "error.wav")
+        elif result == 1:
+            play_audio(stream, "tooLong.wav")
+        else:
+            play_audio(stream, "result.wav")
     stream.stop_stream()
     stream.close()
     wait_for_close_assistant()
