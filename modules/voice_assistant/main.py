@@ -90,10 +90,11 @@ def record(stream: pyaudio.Stream):
     # 新建一个列表，用来存储采样到的数据
     record_buf = []
     count = 0
-    flag= True
+    flag = True
     audio_data: bytes | None = None
-    check_interval =0.1
-    silence_threshold =2
+    check_interval = 0.1
+    silence_threshold = 2
+
     def check_volume():
         nonlocal flag, audio_data
         silent_time = 0
@@ -101,22 +102,22 @@ def record(stream: pyaudio.Stream):
             time.sleep(check_interval)
             if audio_data is not None:
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
-                temp=np.mean(calculate_volume(audio_data))
-                log("np.mean:%s",temp)
-                if temp < 30 :
+                temp = np.mean(calculate_volume(audio_data))
+                log("np.mean:%s", temp)
+                if temp < 30:
                     silent_time += check_interval
-                    log("silent_time%s",silent_time)
+                    log("silent_time%s", silent_time)
                     if silent_time >= silence_threshold:
                         flag = False  # 停止录音的标志
                         break
                 else:
-                    silent_time=0
+                    silent_time = 0
             else:
                 silent_time += check_interval
 
     threading.Thread(target=check_volume).start()
-    #for _ in tqdm(range(8 * 5)):
-    while flag :
+    # for _ in tqdm(range(8 * 5)):
+    while flag:
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
@@ -149,34 +150,31 @@ def is_weather_query(content: str) -> bool:
     weather_keywords = ["天气", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
     return any(keyword in content for keyword in weather_keywords)
 
+
 def is_date_query(content: str) -> bool:
     date_keywords = ["日历", "日程", "日期", "时间表", "安排", "行程", "计划", "时间"]
     return any(keyword in content for keyword in date_keywords)
+
 
 def is_note_query(content: str) -> bool:
     note_keywords = ["笔记", "记录", "便签", "记事本", "备忘", "笔录", "记下", "笔记本"]
     return any(keyword in content for keyword in note_keywords)
 
+
 def is_create_query(content: str) -> bool:
     create_keywords = ["创建", "新建", "添加", "生成"]
     return any(keyword in content for keyword in create_keywords)
+
 
 def is_delete_query(content: str) -> bool:
     delete_keywords = ["删除", "移除", "去掉", "清除"]
     return any(keyword in content for keyword in delete_keywords)
 
+
 def is_change_query(content: str) -> bool:
     change_keywords = ["修改", "更改", "变更", "调整"]
     return any(keyword in content for keyword in change_keywords)
 
-
-def is_note_query(content: str) -> bool:
-    note_keywords = ["", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
-    return any(keyword in content for keyword in note_keywords)
-
-def is_date_query(content: str) -> bool:
-    date_keywords = ["天气", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
-    return any(keyword in content for keyword in date_keywords)
 
 def recognize() -> int:
     token = get_token()
@@ -215,7 +213,7 @@ def recognize() -> int:
             "end": True
         })
         if content is None:
-            return()
+            return output()
         elif is_weather_query(content):
             log("weather")
             weather_info = get_weather()
@@ -231,28 +229,28 @@ def recognize() -> int:
 
         elif is_note_query(content):
             log("note")
-            face_id=get_face_id()
+            face_id = get_face_id()
             if is_create_query(content):
-               output("你想创建关于什么的记事")
+                output("你想创建关于什么的记事")
 
         elif is_date_query(content):
             log("note")
-            face_id=get_face_id()
+            face_id = get_face_id()
         else:
             log("chat")
             answer = chat(content)
-        log("answer",answer)
+        log("answer", answer)
         return output(answer)
     except:
         log("except")
-        return output("")
+        return output("未识别到人脸，请直视摄像头")
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
-    log("output:",TEXT)
+    log("output:", TEXT)
     if hints is None:
         hints = []
-    if TEXT is None :
+    if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
