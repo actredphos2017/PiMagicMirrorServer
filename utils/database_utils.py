@@ -24,3 +24,22 @@ def set_settings(faceid: str, setting: CustomSetting):
             UserInfo.setting: json.dumps(setting.__dict__())
         })
         session.commit()
+
+
+def get_nickname(faceid: str):
+    with Session() as session:
+        target_column = session.query(UserInfo).filter_by(faceid=faceid)
+        if target_column.count() == 0:
+            return None
+        return CustomSetting.from_dict(json.loads(target_column.one().nickname))
+
+
+def set_nickname(faceid: str, nickname: str):
+    with Session() as session:
+        target_column = session.query(UserInfo).filter_by(faceid=faceid)
+        if target_column.count() == 0:
+            raise Exception("User Not Found!")
+        target_column.update({
+            UserInfo.nickname: nickname
+        })
+        session.commit()
