@@ -69,6 +69,11 @@ def main(pipe: Pipe):
 
             log("OPEN Bluetooth Advertise Service!")
             log(f"Local Address: {addr} Port: {port} Service UUID: {service_uuid}")
+            notifyPipe.send("BLUETOOTH_ADVERTISE_OPEN", {
+                "addr": addr,
+                "port": port,
+                "uuid": service_uuid,
+            })
 
             while True:
                 client_sock, address = server_sock.accept()
@@ -82,7 +87,7 @@ def main(pipe: Pipe):
                 raise Exception("System bluetooth is not open! Module stop!")
             elif str(e).startswith("[Errno 13]"):
                 raise Exception("Please run this program with 'sudo'!")
-            elif str(e).startswith("[Errno 111]"):
+            elif str(e).startswith("[Errno 111]") or str(e).startswith("[Errno 2]"):
                 raise Exception("Edit /lib/systemd/system/bluetooth.service and set "
                                 "\"ExecStart=/usr/lib/bluetooth/bluetoothd -E -C\", then restart the system. (If "
                                 "\"ExecStart\" is not existed, please insert it into [Service])")

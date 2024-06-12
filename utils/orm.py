@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, Column, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from models.custom import CustomSetting
+from models.custom import get_default_custom_settings_string
 
 engine = create_engine('sqlite:///magic_mirror.sqlite3')
 Base = declarative_base()
@@ -18,8 +18,7 @@ class UserInfo(Base):
     faceid = Column(String, primary_key=True)
     nickname = Column(String, default="Guest")
     create_time = Column(DateTime, default=datetime.now)
-    setting = Column(Text, default=json.dumps(
-        CustomSetting.default().__dict__()))
+    setting = Column(Text, default=get_default_custom_settings_string())
 
 
 class KeyValuePairStorage(Base):
@@ -61,3 +60,20 @@ class LocalStorage:
             if target_column.count() != 0:
                 target_column.delete()
                 session.commit()
+
+
+class RuntimeCache:
+
+    cache = {}
+
+    @staticmethod
+    def get(key: str) -> str | None:
+        return RuntimeCache.cache.get(key)
+
+    @staticmethod
+    def set(key: str, value: str) -> None:
+        RuntimeCache.cache[key] = value
+
+    @staticmethod
+    def remove(key: str) -> None:
+        RuntimeCache.cache.pop(key)
