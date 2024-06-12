@@ -134,6 +134,14 @@ def is_weather_query(content: str) -> bool:
     return any(keyword in content for keyword in weather_keywords)
 
 
+def is_note_query(content: str) -> bool:
+    note_keywords = ["", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
+    return any(keyword in content for keyword in note_keywords)
+
+def is_date_query(content: str) -> bool:
+    date_keywords = ["天气", "温度", "下雨", "下雪", "风速", "湿度", "气候"]
+    return any(keyword in content for keyword in date_keywords)
+
 def recognize() -> int:
     token = get_token()
     # 2、打开需要识别的语音文件
@@ -292,7 +300,6 @@ def detected_callback():
 def main(pipe: Pipe):
     init_module(pipe)
     log('START!')
-    # 主代码从这里开始
     while True:
         log("Start Listen!")
         try:
