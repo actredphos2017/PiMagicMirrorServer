@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import cv2
+from cv2 import face
 import os
 import numpy as np
 import random
