@@ -92,7 +92,7 @@ def record(stream: pyaudio.Stream):
     flag= True
     audio_data: bytes | None = None
     check_interval =0.1
-    silence_threshold =2
+    silence_threshold =1
     def check_volume():
         nonlocal flag, audio_data
         silent_time = 0
@@ -100,8 +100,11 @@ def record(stream: pyaudio.Stream):
             time.sleep(check_interval)
             if audio_data is not None:
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
-                if np.mean(calculate_volume(audio_data)) < 50 :
+                temp=np.mean(calculate_volume(audio_data))
+                log("np.mean:%s",temp)
+                if temp < 30 :
                     silent_time += check_interval
+                    log("silent_time%s",silent_time)
                     if silent_time >= silence_threshold:
                         flag = False  # 停止录音的标志
                         break
@@ -111,13 +114,11 @@ def record(stream: pyaudio.Stream):
                 silent_time += check_interval
 
     threading.Thread(target=check_volume).start()
-    for _ in tqdm(range(8 * 5)):
-        if not flag:
-            break
+    #for _ in tqdm(range(8 * 5)):
+    while flag :
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
-    flag = False
     wf = wave.open('01.wav', 'wb')  # 创建一个音频文件，名字为“01.wav"
     wf.setnchannels(1)  # 设置声道数为2
     wf.setsampwidth(2)  # 设置采样深度为
