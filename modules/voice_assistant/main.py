@@ -247,7 +247,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
         hints = []
     if TEXT is None:
         notifyPipe.send("ASSISTANT_ANSWER", {
-            "content": "对不起，我没听清.",
+            "content": "对不起，我没听清。",
             "hints": hints
         })
         #return 0
