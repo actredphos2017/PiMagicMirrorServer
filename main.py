@@ -27,7 +27,8 @@ if __name__ == '__main__':
             try:
                 module.main_function(pipe)
             except Exception as e:
-                main_logger(f"Module {module.name} Meet Error: {e}")
+                
+                main_logger(f"Module {module.name} Meet Error: {e.__trackback__}")
 
 
         Thread(target=run_module).start()
