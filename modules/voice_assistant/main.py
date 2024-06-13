@@ -106,7 +106,7 @@ def record(stream: pyaudio.Stream):
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
                 temp = np.mean(calculate_volume(audio_data))
                 log("np.mean:%s", temp)
-                if temp < 30:
+                if temp=="nan" or temp >40 :
                     silent_time += check_interval
                     log("silent_time%s", silent_time)
                     if silent_time >= silence_threshold:
