@@ -7,7 +7,6 @@ if __name__ == '__main__':
     pipe = Pipe()
     lock = Lock()
 
-
     def logger(n: Event, _):
         lock.acquire()
         print(
@@ -18,7 +17,6 @@ if __name__ == '__main__':
         )
         lock.release()
 
-
     pipe.on("LOG", logger)
     main_logger = Notification.create_notifier(pipe, "MAIN")
 
@@ -27,9 +25,7 @@ if __name__ == '__main__':
             try:
                 module.main_function(pipe)
             except Exception as e:
-                
-                main_logger(f"Module {module.name} Meet Error: {e.__trackback__}")
-
+                main_logger(f"Module {module.name} Meet Error: {e}")
 
         Thread(target=run_module).start()
 
