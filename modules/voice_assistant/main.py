@@ -301,7 +301,7 @@ def state_judge(content) -> int:
             log("note create")
             userdata = get_userdata(face_id)
             userdata["note"]["notes"].append(single_note(relevant))
-            set_userdata(face_id, userdata)
+            set_userdata(face_id, userdata, notifyPipe)
             string = "成功添加关于" + relevant + "的记事"
         elif method == "delete":
             log(json.dumps(get_userdata(face_id)["note"]["notes"]))
@@ -317,7 +317,7 @@ def state_judge(content) -> int:
                 return output("未找到对应记事")
             for e in notes_to_delete:
                 notes_list.remove(e)
-            set_userdata(face_id, userdata)
+            set_userdata(face_id, userdata, notifyPipe)
             string = "成功删除关于" + relevant + "的记事"
 
     elif statement == "date":
@@ -325,7 +325,7 @@ def state_judge(content) -> int:
             log("date create")
             userdata = get_userdata(face_id)
             userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
-            set_userdata(face_id, userdata)
+            set_userdata(face_id, userdata, notifyPipe)
             string = "成功添加关于" + relevant + "的日程"
         elif method == "delete":
             log(json.dumps(get_userdata(face_id)["schedule_list"]["schedules"]))
@@ -342,7 +342,7 @@ def state_judge(content) -> int:
                 return output("未找到对应日程")
             for e in schedules_to_delete:
                 schedules_list.remove(e)
-            set_userdata(face_id, userdata)
+            set_userdata(face_id, userdata, notifyPipe)
             string = "成功删除关于" + relevant + "的日程"
 
     statement = ""
