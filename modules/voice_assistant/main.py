@@ -399,6 +399,7 @@ def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
         # 合成成功即将数据存入文件
         with open("result.wav", 'wb') as of:
             of.write(result_str)
+    log("assistant answer:send",TEXT)
     notifyPipe.send("ASSISTANT_ANSWER", {
         "content": TEXT,
         "hints": hints
