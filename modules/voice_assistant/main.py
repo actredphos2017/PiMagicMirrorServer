@@ -9,6 +9,7 @@ from urllib import request, parse
 import numpy as np
 import pyaudio
 import requests
+import tqdm
 
 from api_key_loader import BAIDU_SPEECH_SECRET, BAIDU_SPEECH_API
 from models.custom import *
@@ -112,7 +113,7 @@ def record(stream: pyaudio.Stream):
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
                 temp = np.mean(calculate_volume(audio_data))
                 log("np.mean:%s", temp)
-                if temp!="nan" or temp >0 :
+                if temp!="nan" or temp >5 :
                     silent_time += check_interval
                     log("silent_time%s", silent_time)
                     if silent_time >= silence_threshold:
@@ -124,7 +125,7 @@ def record(stream: pyaudio.Stream):
                 silent_time += check_interval
 
     threading.Thread(target=check_volume).start()
-    # for _ in tqdm(range(8 * 5)):
+    #for _ in tqdm(range(8 * 5)):
     while flag and total_time<10:
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
