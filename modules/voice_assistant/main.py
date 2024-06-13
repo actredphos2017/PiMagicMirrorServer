@@ -96,17 +96,23 @@ def record(stream: pyaudio.Stream):
     audio_data: bytes | None = None
     check_interval = 0.1
     silence_threshold = 2
+    total_time=0
 
     def check_volume():
-        nonlocal flag, audio_data
+        nonlocal flag, audio_data,total_time
         silent_time = 0
         while flag:
             time.sleep(check_interval)
+            total_time=total_time+check_interval
+            if total_time>10:
+                flag=False
+                total_time=0
+                break
             if audio_data is not None:
                 notifyPipe.send("ASSISTANT_ASK_VOLUME", {"volume": calculate_volume(audio_data)})
                 temp = np.mean(calculate_volume(audio_data))
                 log("np.mean:%s", temp)
-                if temp=="nan" or temp >40 :
+                if temp=="nan" or temp >20 :
                     silent_time += check_interval
                     log("silent_time%s", silent_time)
                     if silent_time >= silence_threshold:
@@ -119,7 +125,7 @@ def record(stream: pyaudio.Stream):
 
     threading.Thread(target=check_volume).start()
     # for _ in tqdm(range(8 * 5)):
-    while flag:
+    while flag and total_time<10:
         audio_data = stream.read(2048)  # 读出声卡缓冲区的音频数据
         record_buf.append(audio_data)  # 将读出的音频数据追加到record_buf列表
         count += 1
@@ -352,6 +358,7 @@ def state_judge(content) -> int:
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     log("output:", TEXT)
+    TEXT=TEXT.strip
     if hints is None:
         hints = []
     if TEXT is None:
