@@ -25,7 +25,8 @@ def set_userdata(faceid: str, setting: dict, pipe: Pipe | None = None):
             UserInfo.setting: json.dumps(setting)
         })
         session.commit()
-        pipe.send("USERDATA_UPDATE", {"face_id": faceid})
+        if pipe is not None:
+            pipe.send("USERDATA_UPDATE", {"face_id": faceid})
 
 
 def get_nickname(faceid: str):
@@ -45,4 +46,5 @@ def set_nickname(faceid: str, nickname: str, pipe: Pipe | None = None):
             UserInfo.nickname: nickname
         })
         session.commit()
-        pipe.send("USERDATA_UPDATE", {"face_id": faceid})
+        if pipe is not None:
+            pipe.send("USERDATA_UPDATE", {"face_id": faceid})
