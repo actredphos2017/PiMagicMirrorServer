@@ -246,8 +246,10 @@ def recognize() -> int:
 
 def judge(content) -> int:
     global statement, method,face_id
+    if not isinstance(content, str) and content is not None:
+        content=str(content).strip()
     try:
-        if content is None or content == "我不知道。" or content == "不知道。":
+        if content is None or content == "我不知道。" or content == "不知道。" or content=="":
             return output()
         elif is_weather_query(content):
             log("weather")
@@ -362,12 +364,11 @@ def state_judge(content) -> int:
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
     if not isinstance(TEXT, str) and TEXT is not None:
-        TEXT=str(TEXT)
+        TEXT=str(TEXT).strip()
     log("output:", TEXT)
-    TEXT=TEXT.strip()
     if hints is None:
         hints = []
-    if TEXT is None:
+    if TEXT is None or TEXT=="":
         notifyPipe.send("ASSISTANT_ANSWER", {
             "content": "对不起，我没听清。",
             "hints": hints
