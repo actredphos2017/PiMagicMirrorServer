@@ -299,65 +299,69 @@ def state_judge(content) -> int:
     global statement, method,face_id
     string = ""
     relevant = extract_about_content(content)
-    if not relevant:
-        return output()
+    try:
+        if not relevant:
+            return output()
 
-    if statement == "note":
-        if method == "create":
-            log("note create")
-            userdata = get_userdata(face_id)
-            userdata["note"]["notes"].append(single_note(relevant))
-            set_userdata(face_id, userdata, notifyPipe)
-            string = "成功添加关于" + relevant + "的记事"
-        elif method == "delete":
-            log(json.dumps(get_userdata(face_id)["note"]["notes"]))
-            log("note delete")
+        if statement == "note":
+            if method == "create":
+                log("note create")
+                userdata = get_userdata(face_id)
+                userdata["note"]["notes"].append(single_note(relevant))
+                set_userdata(face_id, userdata, notifyPipe)
+                string = "成功添加关于" + relevant + "的记事"
+            elif method == "delete":
+                log(json.dumps(get_userdata(face_id)["note"]["notes"]))
+                log("note delete")
 
-            def comp(e: dict) -> bool:
-                return relevant in e["content"]
+                def comp(e: dict) -> bool:
+                    return relevant in e["content"]
 
-            userdata = get_userdata(face_id)
-            notes_list = userdata["note"]["notes"]
-            notes_to_delete = [e for e in notes_list if comp(e)]
-            if not notes_to_delete:
-                return output("未找到对应记事")
-            for e in notes_to_delete:
-                notes_list.remove(e)
-            set_userdata(face_id, userdata, notifyPipe)
-            string = "成功删除关于" + relevant + "的记事"
+                userdata = get_userdata(face_id)
+                notes_list = userdata["note"]["notes"]
+                notes_to_delete = [e for e in notes_list if comp(e)]
+                if not notes_to_delete:
+                    return output("未找到对应记事")
+                for e in notes_to_delete:
+                    notes_list.remove(e)
+                set_userdata(face_id, userdata, notifyPipe)
+                string = "成功删除关于" + relevant + "的记事"
 
-    elif statement == "date":
-        if method == "create":
-            log("date create")
-            userdata = get_userdata(face_id)
-            userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
-            set_userdata(face_id, userdata, notifyPipe)
-            string = "成功添加关于" + relevant + "的日程"
-        elif method == "delete":
-            log(json.dumps(get_userdata(face_id)["schedule_list"]["schedules"]))
-            log("date delete")
+        elif statement == "date":
+            if method == "create":
+                log("date create")
+                log("face_id",face_id)
+                userdata = get_userdata(face_id)
+                userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
+                set_userdata(face_id, userdata, notifyPipe)
+                string = "成功添加关于" + relevant + "的日程"
+            elif method == "delete":
+                log(json.dumps(get_userdata(face_id)["schedule_list"]["schedules"]))
+                log("date delete")
 
-            def comp(e: dict) -> bool:
-                log("Hello", type(e))
-                return relevant in e["content"] or relevant in e["name"]
+                def comp(e: dict) -> bool:
+                    log("Hello", type(e))
+                    return relevant in e["content"] or relevant in e["name"]
 
-            userdata = get_userdata(face_id)
-            schedules_list = userdata["schedule_list"]["schedules"]
-            schedules_to_delete = [e for e in schedules_list if comp(e)]
-            if not schedules_to_delete:
-                return output("未找到对应日程")
-            for e in schedules_to_delete:
-                schedules_list.remove(e)
-            set_userdata(face_id, userdata, notifyPipe)
-            string = "成功删除关于" + relevant + "的日程"
+                userdata = get_userdata(face_id)
+                schedules_list = userdata["schedule_list"]["schedules"]
+                schedules_to_delete = [e for e in schedules_list if comp(e)]
+                if not schedules_to_delete:
+                    return output("未找到对应日程")
+                for e in schedules_to_delete:
+                    schedules_list.remove(e)
+                set_userdata(face_id, userdata, notifyPipe)
+                string = "成功删除关于" + relevant + "的日程"
 
-    statement = ""
-    method = ""
-    return output("操作成功," + string)
-
+        statement = ""
+        method = ""
+        return output("操作成功," + string)
+    except Exception as e:
+        log(e)
+        return output("未识别到人脸，请直视摄像头")
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
-    if not isinstance(TEXT, str):
+    if not isinstance(TEXT, str) and TEXT is not None:
         TEXT=str(TEXT)
     log("output:", TEXT)
     TEXT=TEXT.strip()
