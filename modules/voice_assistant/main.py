@@ -159,7 +159,7 @@ def is_date_query(content: str) -> bool:
 
 
 def is_note_query(content: str) -> bool:
-    note_keywords = ["笔记", "记录", "便签", "记事本", "备忘", "笔录", "记下", "笔记本"]
+    note_keywords = ["笔记", "记录", "便签", "记事本", "备忘", "笔录", "记下", "笔记本","记事"]
     return any(keyword in content for keyword in note_keywords)
 
 
@@ -238,7 +238,7 @@ def recognize() -> int:
 
 
 def judge(content) -> int:
-    global statement, method
+    global statement, method,face_id
     try:
         if content is None or content == "我不知道。" or content == "不知道。":
             return output()
@@ -290,7 +290,7 @@ def judge(content) -> int:
 
 
 def state_judge(content) -> int:
-    global statement, method
+    global statement, method,face_id
     string = ""
     relevant = extract_about_content(content)
     if not relevant:
@@ -299,50 +299,50 @@ def state_judge(content) -> int:
     if statement == "note":
         if method == "create":
             log("note create")
-            userdata = get_userdata("test")
+            userdata = get_userdata(face_id)
             userdata["note"]["notes"].append(single_note(relevant))
-            set_userdata("test", userdata)
+            set_userdata(face_id, userdata)
             string = "成功添加关于" + relevant + "的记事"
         elif method == "delete":
-            log(json.dumps(get_userdata("test")["note"]["notes"]))
+            log(json.dumps(get_userdata(face_id)["note"]["notes"]))
             log("note delete")
 
             def comp(e: dict) -> bool:
                 return relevant in e["content"]
 
-            userdata = get_userdata("test")
+            userdata = get_userdata(face_id)
             notes_list = userdata["note"]["notes"]
             notes_to_delete = [e for e in notes_list if comp(e)]
             if not notes_to_delete:
                 return output("未找到对应记事")
             for e in notes_to_delete:
                 notes_list.remove(e)
-            set_userdata("test", userdata)
+            set_userdata(face_id, userdata)
             string = "成功删除关于" + relevant + "的记事"
 
     elif statement == "date":
         if method == "create":
             log("date create")
-            userdata = get_userdata("test")
+            userdata = get_userdata(face_id)
             userdata["schedule_list"]["schedules"].append(single_schedule(relevant))
-            set_userdata("test", userdata)
+            set_userdata(face_id, userdata)
             string = "成功添加关于" + relevant + "的日程"
         elif method == "delete":
-            log(json.dumps(get_userdata("test")["schedule_list"]["schedules"]))
+            log(json.dumps(get_userdata(face_id)["schedule_list"]["schedules"]))
             log("date delete")
 
             def comp(e: dict) -> bool:
                 log("Hello", type(e))
                 return relevant in e["content"] or relevant in e["name"]
 
-            userdata = get_userdata("test")
+            userdata = get_userdata(face_id)
             schedules_list = userdata["schedule_list"]["schedules"]
             schedules_to_delete = [e for e in schedules_list if comp(e)]
             if not schedules_to_delete:
                 return output("未找到对应日程")
             for e in schedules_to_delete:
                 schedules_list.remove(e)
-            set_userdata("test", userdata)
+            set_userdata(face_id, userdata)
             string = "成功删除关于" + relevant + "的日程"
 
     statement = ""
@@ -457,7 +457,7 @@ def detected_callback():
 @define_module("ASSISTANT")
 def main(pipe: Pipe):
     init_module(pipe)
-    notifyPipe.send("FACE_ENTER", {"face_id": "test"})
+    #notifyPipe.send("FACE_ENTER", {"face_id": "test"})
     log('START!')
     while True:
         log("Start Listen!")
