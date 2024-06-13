@@ -14,6 +14,9 @@ from utils.pipe import Pipe, Notification
 notifyPipe: Pipe
 log: Callable
 
+default_addr = "B8:27:EB:8B:93:33"
+default_port = 1
+
 service_uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
 
@@ -82,10 +85,17 @@ def main(pipe: Pipe):
 
         except Exception as e:
             log("RFCOMM Service Meet Exception:", e)
+            log("Temporary Send Default Advertise configuration!")
+            notifyPipe.send("BLUETOOTH_ADVERTISE_OPEN", {
+                "addr": default_addr,
+                "port": default_port,
+                "uuid": service_uuid,
+            })
 
             if str(e).startswith("[Errno 100]"):
                 raise Exception("System bluetooth is not open! Module stop!")
             elif str(e).startswith("[Errno 13]"):
+
                 raise Exception("Please run this program with 'sudo'!")
             elif str(e).startswith("[Errno 111]") or str(e).startswith("[Errno 2]"):
                 raise Exception("Edit /lib/systemd/system/bluetooth.service and set "
