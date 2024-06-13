@@ -458,6 +458,7 @@ def detected_callback():
 def main(pipe: Pipe):
     init_module(pipe)
     #notifyPipe.send("FACE_ENTER", {"face_id": "test"})
+    notifyPipe.send("ASSISTANT_CLOSE")
     log('START!')
     while True:
         log("Start Listen!")
