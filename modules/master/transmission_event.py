@@ -14,7 +14,7 @@ def handle_user_leave(event: Event, pipe: Pipe):
     transfer_only(event, pipe)
 
 
-def handle_user_enter(event: Event, pipe: Pipe):
+def handle_userdata_transfer(event: Event, pipe: Pipe):
     faceid = event.data['face_id']
     with Session() as session:
         user: UserInfo = session.query(UserInfo).get(faceid)
@@ -54,7 +54,8 @@ def init_transmission_event_handler(pipe: Pipe):
     # SEND
     pipe.on("ENVIRONMENT_ACTIVE", handle_environment_active)
     pipe.on("ENVIRONMENT_SILENT", handle_environment_silent)
-    pipe.on("FACE_ENTER", handle_user_enter)
+    pipe.on("USERDATA_TRANSFER", handle_userdata_transfer)
+    pipe.on("FACE_ENTER", handle_userdata_transfer)
     pipe.on("FACE_LEAVE", handle_user_leave)
 
     pipe.on("ASSISTANT_BEGIN", transfer_only)
