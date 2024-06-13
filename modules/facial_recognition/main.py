@@ -29,7 +29,7 @@ def demo():
     notifyPipe.send("ENVIRONMENT_ACTIVE")
     time.sleep(2)
     # 识别到人脸
-    notifyPipe.send("FACE_ENTER", {"faceid": faceid})
+    notifyPipe.send("FACE_ENTER", {"face_id": faceid})
 
     time.sleep(5)
     # 人脸离开
@@ -156,7 +156,7 @@ def detect_exist(cap, recognizers, face_cascade):
             if changeCount >= 5:
                 nowName = name
                 notifyPipe.send("FACE_ENTER", {
-                    "faceid": name
+                    "face_id": name
                 })
                 log(f"Face Enter: {nowName}")
         # cv2.putText(frame, name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)

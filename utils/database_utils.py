@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from utils.orm import *
+from utils.pipe import Pipe
 
 
 def get_face_id() -> str | None:
@@ -15,7 +16,7 @@ def get_userdata(faceid: str) -> dict | None:
         return json.loads(target_column.one().setting)
 
 
-def set_userdata(faceid: str, setting: dict):
+def set_userdata(faceid: str, setting: dict, pipe: Pipe | None = None):
     with Session() as session:
         target_column = session.query(UserInfo).filter_by(faceid=faceid)
         if target_column.count() == 0:
@@ -24,6 +25,8 @@ def set_userdata(faceid: str, setting: dict):
             UserInfo.setting: json.dumps(setting)
         })
         session.commit()
+        if pipe is not None:
+            pipe.send("USERDATA_UPDATE", {"face_id": faceid})
 
 
 def get_nickname(faceid: str):
@@ -34,7 +37,7 @@ def get_nickname(faceid: str):
         return target_column.one().nickname
 
 
-def set_nickname(faceid: str, nickname: str):
+def set_nickname(faceid: str, nickname: str, pipe: Pipe | None = None):
     with Session() as session:
         target_column = session.query(UserInfo).filter_by(faceid=faceid)
         if target_column.count() == 0:
@@ -43,5 +46,5 @@ def set_nickname(faceid: str, nickname: str):
             UserInfo.nickname: nickname
         })
         session.commit()
-
-    
+        if pipe is not None:
+            pipe.send("USERDATA_UPDATE", {"face_id": faceid})
