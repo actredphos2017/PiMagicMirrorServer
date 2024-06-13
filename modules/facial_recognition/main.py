@@ -266,6 +266,9 @@ def main(pipe: Pipe):
         for yml_file in yml_files:
             log(yml_file)
         cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_EXPOSURE, -4)  # 适当减少曝光时间，值可以根据需要调整
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, 150)  # 提高亮度，值可以根据需要调整
+        cap.set(cv2.CAP_PROP_CONTRAST, 50)  # 调整对比度，值可以根据需要调整
 
     notifyPipe.run_on_main_thread(h)
 
