@@ -292,7 +292,6 @@ def judge(content) -> int:
         log("answer", answer)
         return output(answer)
     except Exception as e:
-        log("except", e)
         return output("未识别到人脸，请直视摄像头")
 
 
@@ -358,8 +357,10 @@ def state_judge(content) -> int:
 
 
 def output(TEXT: str | None = None, hints: list[str] | None = None) -> int:
+    if not isinstance(TEXT, str):
+        TEXT=str(TEXT)
     log("output:", TEXT)
-    TEXT=TEXT.strip
+    TEXT=TEXT.strip()
     if hints is None:
         hints = []
     if TEXT is None:
