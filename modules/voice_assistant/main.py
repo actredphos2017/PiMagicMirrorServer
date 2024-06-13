@@ -436,7 +436,7 @@ def close_assistant():
 def wait_for_close_assistant():
     global close_assistant_timer
     notifyPipe.send("ASSISTANT_WAITING")
-    close_assistant_timer = threading.Timer(5, close_assistant).start()
+    close_assistant_timer = threading.Timer(2, close_assistant).start()
 
 
 def interrupt_close_assistant():
